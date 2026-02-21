@@ -4,6 +4,7 @@ export const Strings = {
 
   common: {
     poweredBy: 'Powered by SSQUARE LOGIC',
+    noProviders: 'No providers found',
   },
 
   login: {
@@ -50,5 +51,12 @@ export const Strings = {
     camera: 'Camera',
     gallery: 'Gallery',
     cancel: 'Cancel'
-  }
+  },
+  home: {
+    greeting: 'Hello 👋',
+    title: 'Find Best Services',
+    searchPlaceholder: 'Search plumber, electrician...',
+    topRated: 'Top Rated Provider',
+    categories: 'Categories', // 👈
+  },
 };

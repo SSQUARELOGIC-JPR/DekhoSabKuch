@@ -69,3 +69,26 @@ export interface ImagePickerModalProps {
   onCamera: () => void;
   onGallery: () => void;
 }
+
+export interface Category {
+  id: string;
+  name: string;
+  icon: string;
+}
+
+export interface Provider {
+  id: string;
+  name: string;
+  category: string;
+  rating: number;
+  city: string;
+}
+
+export interface CategoryListProps {
+  selected: string;
+  onSelect: (name: string) => void;
+}
+
+export interface ProviderListProps {
+  data: Provider[];
+}
