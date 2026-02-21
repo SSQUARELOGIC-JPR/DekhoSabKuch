@@ -33,3 +33,7 @@ ios/DekhoSabKuch.xcworkspace/
 .env.local
 .env.development
 .env.production
+
+# Ruby / CocoaPods
+vendor/
+.bundle/
