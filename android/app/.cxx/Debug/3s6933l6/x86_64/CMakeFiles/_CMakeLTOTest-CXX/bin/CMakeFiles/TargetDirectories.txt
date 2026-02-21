@@ -1,0 +1,4 @@
+/Users/lokeshjangid/Desktop/Home/Projects/DekhoSabKuch/android/app/.cxx/Debug/3s6933l6/x86_64/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/foo.dir
+/Users/lokeshjangid/Desktop/Home/Projects/DekhoSabKuch/android/app/.cxx/Debug/3s6933l6/x86_64/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/boo.dir
+/Users/lokeshjangid/Desktop/Home/Projects/DekhoSabKuch/android/app/.cxx/Debug/3s6933l6/x86_64/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/edit_cache.dir
+/Users/lokeshjangid/Desktop/Home/Projects/DekhoSabKuch/android/app/.cxx/Debug/3s6933l6/x86_64/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/rebuild_cache.dir
