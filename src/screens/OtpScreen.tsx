@@ -58,7 +58,7 @@ const OtpScreen = ({ navigation, route }: any) => {
     const handleVerify = () => {
         const finalOtp = otp.join('');
         console.log('OTP:', finalOtp);
-        navigation.navigate(Routes.RoleSelection);
+        navigation.navigate(Routes.RoleSelection, { mobile });
     };
 
     const handleResend = () => {

@@ -92,3 +92,13 @@ export interface CategoryListProps {
 export interface ProviderListProps {
   data: Provider[];
 }
+
+// ---------- MODALS ----------
+export interface ConfirmModalProps {
+  visible: boolean;
+  title: string;
+  subtitle: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+  danger?: boolean;
+}

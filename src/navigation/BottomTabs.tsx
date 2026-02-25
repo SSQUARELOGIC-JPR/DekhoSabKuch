@@ -1,67 +1,46 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Icon from 'react-native-vector-icons/Feather';
-
-import HomeScreen from '../screens/HomeScreen';
+import DashboardScreen from '../screens/HomeScreen';
 import NotificationScreen from '../screens/NotificationScreen';
-import ProfileScreen from '../screens/ProfileSetupScreen';
-import SettingScreen from '../screens/SettingScreen';
+import ProfileSetupScreen from '../screens/ProfileSetupScreen';
+import SettingsScreen from '../screens/SettingScreen';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { Colors } from '../theme/colors';
+import { Typography } from '../theme/typography';
 
 const Tab = createBottomTabNavigator();
 
-const BottomTabs = ({ route }: any) => {
-  const role = route?.params?.role; // pass role from auth/profile flow
+const BottomTabs = () => {
+  const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: '#9e9e9e',
         tabBarStyle: {
-          height: 65,
-          paddingBottom: 8,
-          paddingTop: 6,
+          height: 65 + insets.bottom,
+          paddingBottom: insets.bottom,
+          backgroundColor: Colors.white,
         },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600',
-        },
-        tabBarIcon: ({ color, size }) => {
+        tabBarLabelStyle: Typography.tabLabel, // 🔥 using typography
+        tabBarActiveTintColor: Colors.primary,
+        tabBarInactiveTintColor: Colors.black,
+        tabBarIcon: ({ color }) => {
           let iconName: string = 'home';
 
-          if (route.name === 'Home') iconName = 'home';
-          else if (route.name === 'Notification') iconName = 'bell';
-          else if (route.name === 'Profile') iconName = 'user';
-          else if (route.name === 'Setting') iconName = 'settings';
+          if (route.name === 'Dashboard') iconName = 'home'; // solid
+          else if (route.name === 'Notifications') iconName = 'notifications';
+          else if (route.name === 'Profile') iconName = 'person';
+          else if (route.name === 'Settings') iconName = 'settings';
 
-          return <Icon name={iconName} size={size} color={color} />;
+          return <Icon name={iconName} size={22} color={color} />;
         },
-      })}
-    >
-      {/* Home */}
-      <Tab.Screen name="Home">
-        {props => <HomeScreen {...props} role={role} />}
-      </Tab.Screen>
-
-      {/* Notification */}
-      <Tab.Screen
-        name="Notification"
-        component={NotificationScreen}
-      />
-
-      {/* Profile */}
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-      />
-
-      {/* Setting */}
-      <Tab.Screen
-        name="Setting"
-        component={SettingScreen}
-      />
+      })}>
+      <Tab.Screen name="Dashboard" component={DashboardScreen} />
+      <Tab.Screen name="Notifications" component={NotificationScreen} />
+      <Tab.Screen name="Profile" component={ProfileSetupScreen} />
+      <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
 };

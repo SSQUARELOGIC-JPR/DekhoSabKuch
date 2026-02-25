@@ -15,13 +15,9 @@ const Stack = createNativeStackNavigator();
 const AuthStack = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name={Routes.Splash} component={SplashScreen} />
       <Stack.Screen name={Routes.Login} component={LoginScreen} />
       <Stack.Screen name={Routes.Otp} component={OtpScreen} />
       <Stack.Screen name={Routes.RoleSelection} component={RoleSelectionScreen} />
-      <Stack.Screen name={Routes.Profile} component={ProfileScreen} />
-      <Stack.Screen name={Routes.Payment} component={PaymentScreen} />
-      <Stack.Screen name={Routes.Home} component={HomeScreen} />
     </Stack.Navigator>
   );
 };

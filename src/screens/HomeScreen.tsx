@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
   TextInput,
-  FlatList,
-  TouchableOpacity,
   ScrollView,
   StyleSheet,
 } from 'react-native';
@@ -17,11 +15,24 @@ import { categories, providers } from '../utils/providersData';
 import { Strings } from '../constants/strings';
 import CategoryList from '../components/CategoryList';
 import ProviderList from '../components/ProviderList';
+import AccessBlockModal from '../components/AccessBlockModal';
+import { AuthContext } from '../context/AuthContext';
 
 const HomeScreen = () => {
   const insets = useSafeAreaInsets();
+  const { user } = useContext(AuthContext);
+
   const [selectedCategory, setSelectedCategory] = useState<string>('Electrician');
   const [search, setSearch] = useState<string>('');
+  const [showBlocked, setShowBlocked] = useState(false);
+
+  const checkAccess = () => {
+    if (!user?.profileDone || !user?.paymentDone) {
+      setShowBlocked(true);
+      return false;
+    }
+    return true;
+  };
 
   const filteredProviders = providers.filter(item => {
     const matchCategory = item.category === selectedCategory;
@@ -76,8 +87,18 @@ const HomeScreen = () => {
         </View>
 
         {/* Provider List */}
-        <ProviderList data={filteredProviders} />
+        <ProviderList
+          data={filteredProviders}
+        // onPressItem={() => {
+        //   if (!checkAccess()) return;
+        // }}
+        />
       </ScrollView>
+
+      <AccessBlockModal
+        visible={showBlocked}
+        onClose={() => setShowBlocked(false)}
+      />
     </View>
   );
 };
@@ -168,5 +189,5 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primaryCard,
     justifyContent: 'center',
     alignItems: 'center',
-  }
+  },
 });

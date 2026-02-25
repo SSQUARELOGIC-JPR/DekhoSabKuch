@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { AppButton } from '../components/AppButton';
 import { Routes } from '../constants/routes';
 import { Strings } from '../constants/strings';
 import AppHeaderLogo from '../components/AppHeaderLogo';
+import { AuthContext } from '../context/AuthContext';
 
 import {
   RoleType,
@@ -23,14 +24,26 @@ import {
   RoleSelectionScreenProps,
 } from '../types/interfaces';
 
-const RoleSelectionScreen = ({ navigation }: RoleSelectionScreenProps) => {
+const RoleSelectionScreen = ({ navigation, route }: RoleSelectionScreenProps) => {
   const [role, setRole] = useState<RoleType>(null);
+const { setUser } = useContext(AuthContext);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!role) return;
-    navigation.navigate(Routes.Profile, { role })
-  };
 
+    // phone number tum Login/OTP se route params me pass kar sakte ho
+    const mobile = route?.params?.mobile || '';
+
+    const userData = {
+      mobile,
+      role,
+      profileDone: false,
+      paymentDone: false,
+    };
+
+    await setUser(userData);
+
+  };
   const RoleCard = ({
     title,
     description,
