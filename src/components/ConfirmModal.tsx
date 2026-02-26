@@ -1,49 +1,36 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  Modal,
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-} from 'react-native';
-import { Colors, Typography } from '../theme';
-import { ConfirmModalProps } from '../types/interfaces';
+import { View, Text, Modal, StyleSheet, TouchableOpacity } from 'react-native';
 import { moderateScale } from 'react-native-size-matters';
-
-const { width } = Dimensions.get('window');
+import { Colors } from '../theme/colors';
+import { Typography } from '../theme/typography';
+import { ConfirmModalProps } from '../types/interfaces';
 
 const ConfirmModal: React.FC<ConfirmModalProps> = ({
   visible,
   title,
   subtitle,
-  onCancel,
-  onConfirm,
-  danger = false,
+  onClose,
+  onOk,
+  showLater = true,
+  okText = 'Okay',
+  laterText = 'Later',
 }) => {
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal transparent visible={visible} animationType="fade">
       <View style={styles.overlay}>
         <View style={styles.box}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
 
           <View style={styles.row}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
+            {showLater && (
+              <TouchableOpacity style={styles.laterBtn} onPress={onClose}>
+                <Text style={styles.laterText}>{laterText}</Text>
+              </TouchableOpacity>
+            )}
 
-            <TouchableOpacity
-              style={[
-                styles.confirmBtn,
-                {
-                  backgroundColor: danger
-                    ? Colors.error
-                    : Colors.accent, // 👈 accent color
-                },
-              ]}
-              onPress={onConfirm}>
-              <Text style={styles.confirmText}>Confirm</Text>
+            <TouchableOpacity style={styles.okBtn} onPress={onOk}>
+              <Text style={styles.okText}>{okText}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -57,53 +44,53 @@ export default ConfirmModal;
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: '#00000066',
+    backgroundColor: '#00000070',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: moderateScale(16),
   },
   box: {
-    width: '100%',
-    maxWidth: moderateScale(360), // 👈 responsive max width
+    width: '85%',
     backgroundColor: Colors.white,
     borderRadius: moderateScale(18),
     padding: moderateScale(20),
   },
   title: {
-    ...Typography.title,
+    ...Typography.subtitle,
+    fontWeight: '700',
     color: Colors.textPrimary,
-    marginBottom: moderateScale(8),
-    textAlign: 'left',
   },
   subtitle: {
-    ...Typography.subtitle,
+    marginTop: moderateScale(8),
+    ...Typography.small,
     color: Colors.textSecondary,
-    marginBottom: moderateScale(20),
-    lineHeight: moderateScale(20),
   },
   row: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
+    marginTop: moderateScale(18),
+    gap: moderateScale(10),
+  },
+  laterBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingVertical: moderateScale(10),
+    borderRadius: moderateScale(10),
     alignItems: 'center',
   },
-  cancelBtn: {
+  okBtn: {
+    flex: 1,
+    backgroundColor: Colors.accent,
     paddingVertical: moderateScale(10),
-    paddingHorizontal: moderateScale(18),
-    marginRight: moderateScale(8),
+    borderRadius: moderateScale(10),
+    alignItems: 'center',
   },
-  cancelText: {
+  laterText: {
     color: Colors.textSecondary,
     fontWeight: '600',
-    fontSize: moderateScale(14),
   },
-  confirmBtn: {
-    paddingVertical: moderateScale(10),
-    paddingHorizontal: moderateScale(20),
-    borderRadius: moderateScale(10),
-  },
-  confirmText: {
+  okText: {
     color: Colors.white,
     fontWeight: '600',
-    fontSize: moderateScale(14),
   },
 });
