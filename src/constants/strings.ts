@@ -34,7 +34,7 @@ export const Strings = {
   },
 
   profile: {
-  title: "Complete Your Profile",
+  title: "Your Profile",
   name: "Full Name",
   address: "Local Address",
   city: "City",

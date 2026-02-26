@@ -151,6 +151,7 @@ const ProfileScreen = ({ navigation }: any) => {
     <View style={styles.root}>
       {/* HEADER */}
       <View style={[styles.header, { paddingTop: insets.top + verticalScale(10) }]}>
+        <Text style={styles.title}>{Strings.profile.title}</Text>
         {user?.profileDone && (
           <TouchableOpacity style={styles.editBtn} onPress={() => setIsEdit(!isEdit)}>
             <Icon
@@ -178,8 +179,6 @@ const ProfileScreen = ({ navigation }: any) => {
             <Icon name="camera" size={22} color={Colors.white} />
           )}
         </TouchableOpacity>
-
-        <Text style={styles.title}>{Strings.profile.title}</Text>
       </View>
 
       {/* BODY */}
@@ -304,7 +303,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.white,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: verticalScale(10),
+    marginTop: verticalScale(10),
     backgroundColor: Colors.primary,
   },
 
