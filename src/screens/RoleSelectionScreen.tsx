@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,14 +9,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Feather';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
+import { useDispatch } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
 
 import { Images } from '../constants/images';
 import { Colors } from '../theme/colors';
 import { AppButton } from '../components/AppButton';
-import { Routes } from '../constants/routes';
 import { Strings } from '../constants/strings';
 import AppHeaderLogo from '../components/AppHeaderLogo';
-import { AuthContext } from '../context/AuthContext';
+import { loginSuccess } from '../store/authSlice';
+import { Routes } from '../constants/routes';
 
 import {
   RoleType,
@@ -24,14 +26,14 @@ import {
   RoleSelectionScreenProps,
 } from '../types/interfaces';
 
-const RoleSelectionScreen = ({ navigation, route }: RoleSelectionScreenProps) => {
+const RoleSelectionScreen = ({ route }: RoleSelectionScreenProps) => {
   const [role, setRole] = useState<RoleType>(null);
-const { setUser } = useContext(AuthContext);
+  const dispatch = useDispatch();
+  const navigation = useNavigation<any>();
 
-  const handleContinue = async () => {
+  const handleContinue = () => {
     if (!role) return;
 
-    // phone number tum Login/OTP se route params me pass kar sakte ho
     const mobile = route?.params?.mobile || '';
 
     const userData = {
@@ -41,9 +43,10 @@ const { setUser } = useContext(AuthContext);
       paymentDone: false,
     };
 
-    await setUser(userData);
-
+    // 🔥 Save user in redux
+    dispatch(loginSuccess(userData));
   };
+
   const RoleCard = ({
     title,
     description,

@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -11,15 +11,16 @@ import Icon from 'react-native-vector-icons/Feather';
 import { Colors, Typography } from '../theme';
 import ConfirmModal from '../components/ConfirmModal';
 import { ScreenProps } from '../types/interfaces';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Routes } from '../constants/routes';
-import { AuthContext } from '../context/AuthContext';
+import { useDispatch } from 'react-redux';
+import { logout } from '../store/authSlice'; // 👈 redux action
+import { persistor } from '../store';
 
-const SettingsScreen: React.FC<ScreenProps> = ({ navigation }) => {
+const SettingsScreen: React.FC<ScreenProps> = () => {
   const [logoutModal, setLogoutModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
-  const { logout } = useContext(AuthContext);
-  
+
+  const dispatch = useDispatch();
+
   const SettingItem = ({
     title,
     icon,
@@ -95,9 +96,8 @@ const SettingsScreen: React.FC<ScreenProps> = ({ navigation }) => {
           onCancel={() => setLogoutModal(false)}
           onConfirm={async () => {
             setLogoutModal(false);
-            await AsyncStorage.removeItem('userData');
-            await AsyncStorage.removeItem('userData');
-            await logout();
+            dispatch(logout());          // clear redux state
+            await persistor.purge();     // clear persisted storage
           }}
         />
 
@@ -110,8 +110,8 @@ const SettingsScreen: React.FC<ScreenProps> = ({ navigation }) => {
           onCancel={() => setDeleteModal(false)}
           onConfirm={async () => {
             setDeleteModal(false);
-            await AsyncStorage.removeItem('userData');
-            await logout();
+            dispatch(logout()); // 🔥 same flow
+            await persistor.purge();
           }}
         />
       </View>

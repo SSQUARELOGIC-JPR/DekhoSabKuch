@@ -34,18 +34,29 @@ export const Strings = {
   },
 
   profile: {
-    title: "Complete Your Profile",
-    name: "Full Name",
-    address: "Local Address",
-    city: "City",
-    state: "State",
-    pincode: "Pincode",
-    verificationId: "Verification ID",
-    uploadId: "Upload ID Proof",
-    continue: "Continue",
-    successTitle: "Profile Completed ✔",
-    successSubtitle: "Your profile has been successfully created.",
-  },
+  title: "Complete Your Profile",
+  name: "Full Name",
+  address: "Local Address",
+  city: "City",
+  state: "State",
+  pincode: "Pincode",
+  verificationId: "Verification ID",
+  uploadId: "Upload ID Proof",
+  continue: "Continue",
+
+  // 🔥 NEW
+  blockSubtitle:
+    "Please complete your profile and payment to access all features.",
+
+  updateSuccessTitle: "Profile Updated",
+  updateSuccessSubtitle:
+    "Your profile details have been updated successfully.",
+
+  ok: "OK",
+  later: "Later",
+  completeNow: "Complete Now",
+  edit: "Edit",
+},
   cameraModal: {
     title: 'Select Profile Photo',
     camera: 'Camera',
@@ -57,6 +68,26 @@ export const Strings = {
     title: 'Find Best Services',
     searchPlaceholder: 'Search plumber, electrician...',
     topRated: 'Top Rated Provider',
-    categories: 'Categories', // 👈
+    categories: 'Categories',
+
+    call: 'Call',
+    message: 'WhatsApp',
+    viewProfile: 'View Profile',
   },
+  payment: {
+    title: 'Complete Your Payment',
+    subtitle: 'Pay registration fee to continue',
+  },
+  providerDetails: {
+    title: 'Provider Details',
+    distance: 'Distance',
+    rating: 'Rating',
+    location: 'Location',
+    call: 'Call',
+    whatsapp: 'WhatsApp',
+    about: 'About Provider',
+    experience: 'Experience',
+    servicesDone: 'Services Completed',
+    years: 'Years',
+  }
 };

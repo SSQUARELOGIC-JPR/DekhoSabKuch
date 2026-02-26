@@ -20,6 +20,7 @@ export const providers: Provider[] = [
     category: 'Electrician',
     rating: 4.5,
     city: 'Jaipur',
+    phone: '9784477117'
   },
   {
     id: 'p2',
@@ -27,6 +28,7 @@ export const providers: Provider[] = [
     category: 'Electrician',
     rating: 4.3,
     city: 'Jaipur',
+    phone: '9784477117'
   },
   {
     id: 'p3',
@@ -34,6 +36,7 @@ export const providers: Provider[] = [
     category: 'Plumber',
     rating: 4.2,
     city: 'Jaipur',
+    phone: '9784477117'
   },
   {
     id: 'p4',
@@ -41,6 +44,7 @@ export const providers: Provider[] = [
     category: 'Plumber',
     rating: 4.6,
     city: 'Jaipur',
+    phone: '9784477117'
   },
   {
     id: 'p5',
@@ -48,6 +52,7 @@ export const providers: Provider[] = [
     category: 'Salon',
     rating: 4.8,
     city: 'Jaipur',
+    phone: '9784477117'
   },
   {
     id: 'p6',
@@ -55,6 +60,7 @@ export const providers: Provider[] = [
     category: 'Salon',
     rating: 4.4,
     city: 'Jaipur',
+    phone: '9784477117'
   },
   {
     id: 'p7',
@@ -62,6 +68,7 @@ export const providers: Provider[] = [
     category: 'AC Repair',
     rating: 4.1,
     city: 'Jaipur',
+    phone: '9784477117'
   },
   {
     id: 'p8',
@@ -69,6 +76,7 @@ export const providers: Provider[] = [
     category: 'Carpenter',
     rating: 4.7,
     city: 'Jaipur',
+    phone: '9784477117'
   },
   {
     id: 'p9',
@@ -76,6 +84,7 @@ export const providers: Provider[] = [
     category: 'Cleaning',
     rating: 4.5,
     city: 'Jaipur',
+    phone: '9784477117'
   },
   {
     id: 'p10',
@@ -83,5 +92,6 @@ export const providers: Provider[] = [
     category: 'Pest Control',
     rating: 4.2,
     city: 'Jaipur',
+    phone: '9784477117'
   },
 ];

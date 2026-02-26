@@ -1,28 +1,35 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   TextInput,
   ScrollView,
   StyleSheet,
+  Linking,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
+import { useSelector } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
+
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
-import { categories, providers } from '../utils/providersData';
+import { providers } from '../utils/providersData';
 import { Strings } from '../constants/strings';
 import CategoryList from '../components/CategoryList';
 import ProviderList from '../components/ProviderList';
 import AccessBlockModal from '../components/AccessBlockModal';
-import { AuthContext } from '../context/AuthContext';
+import { Routes } from '../constants/routes';
+import { RootState } from '../store';
 
 const HomeScreen = () => {
   const insets = useSafeAreaInsets();
-  const { user } = useContext(AuthContext);
+  const navigation = useNavigation();
+  const user = useSelector((state: RootState) => state.auth.user);
 
-  const [selectedCategory, setSelectedCategory] = useState<string>('Electrician');
+  const [selectedCategory, setSelectedCategory] =
+    useState<string>('Electrician');
   const [search, setSearch] = useState<string>('');
   const [showBlocked, setShowBlocked] = useState(false);
 
@@ -32,6 +39,28 @@ const HomeScreen = () => {
       return false;
     }
     return true;
+  };
+
+  // 📞 Call
+  const handleCall = (phone: string) => {
+    if (!checkAccess()) return;
+    Linking.openURL(`tel:${phone}`);
+  };
+
+  // 💬 WhatsApp
+  const handleWhatsApp = (phone: string) => {
+    if (!checkAccess()) return;
+
+    const url = `whatsapp://send?phone=91${phone}`;
+    Linking.openURL(url).catch(() => {
+      Linking.openURL(`https://wa.me/91${phone}`);
+    });
+  };
+
+  // 👤 View Profile
+  const handleViewProfile = (provider: any) => {
+    if (!checkAccess()) return;
+    (navigation as any).navigate(Routes.ProviderDetails, { provider });
   };
 
   const filteredProviders = providers.filter(item => {
@@ -45,12 +74,20 @@ const HomeScreen = () => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.topHeader, { paddingTop: insets.top + verticalScale(6) }]}>
+      <View
+        style={[
+          styles.topHeader,
+          { paddingTop: insets.top + verticalScale(6) },
+        ]}>
         <Text style={styles.greeting}>{Strings.home.greeting}</Text>
         <Text style={styles.title}>{Strings.home.title}</Text>
 
         <View style={styles.searchBar}>
-          <Icon name="search" size={moderateScale(18)} color={Colors.textPlaceholder} />
+          <Icon
+            name="search"
+            size={moderateScale(18)}
+            color={Colors.textPlaceholder}
+          />
           <TextInput
             placeholder={Strings.home.searchPlaceholder}
             placeholderTextColor={Colors.textPlaceholder}
@@ -64,7 +101,9 @@ const HomeScreen = () => {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Categories */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{Strings.home.categories}</Text>
+          <Text style={styles.sectionTitle}>
+            {Strings.home.categories}
+          </Text>
 
           <CategoryList
             selected={selectedCategory}
@@ -75,29 +114,46 @@ const HomeScreen = () => {
         {/* Featured */}
         <View style={styles.featuredCard}>
           <View>
-            <Text style={styles.featuredTitle}>{Strings.home.topRated}</Text>
+            <Text style={styles.featuredTitle}>
+              {Strings.home.topRated}
+            </Text>
             <Text style={styles.featuredName}>
               {filteredProviders[0]?.name || Strings.home.topRated}
             </Text>
-            <Text style={styles.featuredCategory}>{selectedCategory}</Text>
+            <Text style={styles.featuredCategory}>
+              {selectedCategory}
+            </Text>
           </View>
           <View style={styles.featuredAvatar}>
-            <Icon name="person" size={moderateScale(24)} color={Colors.white} />
+            <Icon
+              name="person"
+              size={moderateScale(24)}
+              color={Colors.white}
+            />
           </View>
         </View>
 
         {/* Provider List */}
         <ProviderList
           data={filteredProviders}
-        // onPressItem={() => {
-        //   if (!checkAccess()) return;
-        // }}
+          onCall={handleCall}
+          onMessage={handleWhatsApp}
+          onViewProfile={handleViewProfile}
         />
       </ScrollView>
 
+      {/* Access Block Modal */}
       <AccessBlockModal
         visible={showBlocked}
+        title={Strings.profile.title}
+        subtitle={Strings.profile.blockSubtitle}
+        laterText={Strings.profile.later}
+        okText={Strings.profile.completeNow}
         onClose={() => setShowBlocked(false)}
+        onOk={() => {
+          setShowBlocked(false);
+          (navigation as any).navigate(Routes.Profile);
+        }}
       />
     </View>
   );

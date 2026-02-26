@@ -1,19 +1,28 @@
-import React, { useContext } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+
 import AuthStack from '../navigation/AuthStack';
 import MainStack from '../navigation/MainStack';
 import SplashScreen from '../screens/SplashScreen';
-import { AuthContext } from '../context/AuthContext';
+import { RootState } from '../store';
 
 const AppNavigator = () => {
-  const { user, loading } = useContext(AuthContext);
+  const isLogin = useSelector((state: RootState) => state.auth.isLogin);
+  const [showSplash, setShowSplash] = useState(true);
 
-  // Cold start → show splash
-  if (loading) {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 2000); // splash duration
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (showSplash) {
     return <SplashScreen />;
   }
 
-  // After loading decide
-  return user ? <MainStack /> : <AuthStack />;
+  return isLogin ? <MainStack /> : <AuthStack />;
 };
 
 export default AppNavigator;

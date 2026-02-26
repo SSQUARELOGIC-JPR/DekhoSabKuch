@@ -1,15 +1,32 @@
 import React from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
+
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
 import StarRating from './StarRating';
 import { ProviderListProps, Provider } from '../types/interfaces';
+import { Strings } from '../constants/strings';
 
-const ProviderList: React.FC<ProviderListProps> = ({ data }) => {
+const ProviderList: React.FC<ProviderListProps> = ({
+  data,
+  onBlockedPress,
+  onCall,
+  onMessage,
+  onViewProfile,
+}) => {
   const renderItem = ({ item }: { item: Provider }) => (
-    <TouchableOpacity style={styles.card}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => onViewProfile?.(item) || onBlockedPress?.()}
+    >
       {/* Avatar */}
       <View style={styles.avatar}>
         <Icon name="person" size={moderateScale(20)} color={Colors.white} />
@@ -35,21 +52,33 @@ const ProviderList: React.FC<ProviderListProps> = ({ data }) => {
       {/* Right Column */}
       <View style={styles.rightColumn}>
         {/* Arrow */}
-        <Icon
-          name="chevron-forward"
-          size={moderateScale(20)}
-          color={Colors.textSecondary}
-        />
+        <TouchableOpacity
+          onPress={() => onViewProfile?.(item) || onBlockedPress?.()}
+        >
+          <Icon
+            name="chevron-forward"
+            size={moderateScale(20)}
+            color={Colors.textSecondary}
+          />
+        </TouchableOpacity>
 
-        {/* Call & Chat Horizontal */}
+        {/* Call & Chat */}
         <View style={styles.actionsRow}>
-          <TouchableOpacity style={styles.iconBtn}>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={() =>
+              onCall ? onCall(item.phone as any) : onBlockedPress?.()
+            }>
             <Icon name="call" size={moderateScale(15)} color={Colors.primary} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.iconBtn}>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={() =>
+              onMessage ? onMessage(item.phone as any) : onBlockedPress?.()
+            }>
             <Icon
-              name="chatbubble-ellipses"
+              name="logo-whatsapp"
               size={moderateScale(15)}
               color={Colors.primary}
             />
@@ -67,7 +96,9 @@ const ProviderList: React.FC<ProviderListProps> = ({ data }) => {
       scrollEnabled={false}
       contentContainerStyle={styles.list}
       ListEmptyComponent={
-        <Text style={styles.empty}>No providers found</Text>
+        <Text style={styles.empty}>
+          {Strings.common.noProviders}
+        </Text>
       }
     />
   );
@@ -89,7 +120,7 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(10),
     alignItems: 'center',
     elevation: 4,
-    position: 'relative', // required for absolute column
+    position: 'relative',
   },
 
   avatar: {
@@ -104,7 +135,7 @@ const styles = StyleSheet.create({
 
   info: {
     flex: 1,
-    paddingRight: moderateScale(60), // prevent overlap with right column
+    paddingRight: moderateScale(60),
   },
 
   name: {
@@ -131,14 +162,13 @@ const styles = StyleSheet.create({
     color: Colors.textDark,
   },
 
-  /* Right Side Absolute Column */
   rightColumn: {
     position: 'absolute',
     right: moderateScale(6),
     top: moderateScale(10),
     bottom: moderateScale(10),
     justifyContent: 'space-evenly',
-    alignItems: 'flex-end', // horizontal center alignment
+    alignItems: 'flex-end',
   },
 
   actionsRow: {

@@ -3,25 +3,36 @@ import { View, Text, Modal, StyleSheet, TouchableOpacity } from 'react-native';
 import { moderateScale } from 'react-native-size-matters';
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
+import { ConfirmModalProps } from '../types/interfaces';
 
-interface Props {
-  visible: boolean;
-  onClose: () => void;
-}
-
-const AccessBlockModal: React.FC<Props> = ({ visible, onClose }) => {
+const AccessBlockModal: React.FC<ConfirmModalProps> = ({
+  visible,
+  title,
+  subtitle,
+  onClose,
+  onOk,
+  showLater = true,
+  okText = 'Okay',
+  laterText = 'Later',
+}) => {
   return (
     <Modal transparent visible={visible} animationType="fade">
       <View style={styles.overlay}>
         <View style={styles.box}>
-          <Text style={styles.title}>Complete Your Profile</Text>
-          <Text style={styles.subtitle}>
-            Please complete your profile and payment to access all features.
-          </Text>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.subtitle}>{subtitle}</Text>
 
-          <TouchableOpacity style={styles.btn} onPress={onClose}>
-            <Text style={styles.btnText}>Okay</Text>
-          </TouchableOpacity>
+          <View style={styles.row}>
+            {showLater && (
+              <TouchableOpacity style={styles.laterBtn} onPress={onClose}>
+                <Text style={styles.laterText}>{laterText}</Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity style={styles.okBtn} onPress={onOk}>
+              <Text style={styles.okText}>{okText}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
@@ -53,14 +64,37 @@ const styles = StyleSheet.create({
     ...Typography.small,
     color: Colors.textSecondary,
   },
-  btn: {
+
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: moderateScale(18),
+    gap: moderateScale(10),
+  },
+
+  laterBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingVertical: moderateScale(10),
+    borderRadius: moderateScale(10),
+    alignItems: 'center',
+  },
+
+  okBtn: {
+    flex: 1,
     backgroundColor: Colors.accent,
     paddingVertical: moderateScale(10),
     borderRadius: moderateScale(10),
     alignItems: 'center',
   },
-  btnText: {
+
+  laterText: {
+    color: Colors.textSecondary,
+    fontWeight: '600',
+  },
+
+  okText: {
     color: Colors.white,
     fontWeight: '600',
   },

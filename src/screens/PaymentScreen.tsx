@@ -4,34 +4,44 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ImageBackground,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
 import Icon from 'react-native-vector-icons/Feather';
+import { useDispatch, useSelector } from 'react-redux';
 
-import { Images } from '../constants/images';
 import { Colors } from '../theme/colors';
-import { AppButton } from '../components/AppButton';
+import { RootState } from '../store';
+import { updatePaymentDone } from '../store/authSlice';
 import { Routes } from '../constants/routes';
+import { Strings } from '../constants/strings';
+import { ScreenProps, RoleType } from '../types/interfaces';
 
-type RoleType = 'customer' | 'provider' | 'both';
 type PaymentMethod = 'upi' | 'card' | 'cod';
 
-const PaymentScreen = ({ navigation, route }: any) => {
-  const role: RoleType = route?.params?.role || 'customer';
+const PaymentScreen: React.FC<ScreenProps> = ({ navigation }) => {
+  const dispatch = useDispatch();
+  const insets = useSafeAreaInsets();
+
+  const user = useSelector((state: RootState) => state.auth.user);
+  const role: RoleType = user?.role || 'customer';
+
   const [method, setMethod] = useState<PaymentMethod | null>(null);
 
-  // Dynamic Amount
   const amount = useMemo(() => {
-    if (role === 'customer') return 10;
-    if (role === 'provider') return 50;
+    if (role === 'customer') return 15;
     return 50;
   }, [role]);
 
   const handlePayment = () => {
     if (!method) return;
-    navigation.replace(Routes.Home);
+    dispatch(updatePaymentDone());
+    navigation.reset({
+      index: 0,
+      routes: [{ name: Routes.BottomTabs }],
+    });
   };
 
   const PaymentOption = ({
@@ -50,7 +60,7 @@ const PaymentScreen = ({ navigation, route }: any) => {
         onPress={() => setMethod(type)}>
         <Icon
           name={icon}
-          size={22}
+          size={20}
           color={selected ? Colors.white : Colors.primary}
         />
         <Text
@@ -65,106 +75,154 @@ const PaymentScreen = ({ navigation, route }: any) => {
   };
 
   return (
-    <ImageBackground source={Images.splashBg} style={styles.bg}>
-      <SafeAreaView style={styles.container}>
-        <View style={{ flex: 1 }}>
-          {/* Center Content */}
-          <View style={styles.centerContent}>
-            <Text style={styles.title}>Complete Your Payment</Text>
-            <Text style={styles.subtitle}>
-              Pay registration fee to continue
-            </Text>
+    <View style={styles.root}>
+      {/* HEADER */}
+      <View style={[styles.header, { paddingTop: insets.top + verticalScale(10) }]}>
 
-            {/* Amount Card */}
-            <View style={styles.amountBox}>
-              <Text style={styles.amountLabel}>Total Amount</Text>
-              <Text style={styles.amount}>₹{amount}</Text>
-            </View>
+        {/* Back Button */}
+        <TouchableOpacity
+          style={[styles.backBtn, { top: insets.top + 6 }]}
+          onPress={() => navigation.goBack()}>
+          <Icon name="arrow-left" size={22} color={Colors.white} />
+        </TouchableOpacity>
 
-            {/* Payment Options */}
+        <Text style={styles.title}>{Strings.payment.title}</Text>
+
+        <View style={styles.headerIcon}>
+          <Icon name="credit-card" size={26} color={Colors.white} />
+        </View>
+      </View>
+
+      {/* BODY */}
+      <KeyboardAvoidingView
+        style={styles.body}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+
+        {/* CONTENT */}
+        <View style={styles.content}>
+          <Text style={styles.subtitle}>
+            {Strings.payment.subtitle}
+          </Text>
+
+          <View style={styles.card}>
+            <Text style={styles.amountLabel}>Total Amount</Text>
+            <Text style={styles.amount}>₹{amount}</Text>
+
             <View style={styles.optionsWrapper}>
               <PaymentOption type="upi" title="Pay via UPI" icon="smartphone" />
               <PaymentOption type="card" title="Credit / Debit Card" icon="credit-card" />
               <PaymentOption type="cod" title="Pay Later (Approval)" icon="clock" />
             </View>
           </View>
-
-          {/* Bottom Button */}
-          <AppButton
-            title={`Pay ₹${amount}`}
-            onPress={handlePayment}
-            disabled={!method}
-          />
         </View>
-      </SafeAreaView>
-    </ImageBackground>
+
+        {/* BUTTON (Safe Area Fixed) */}
+        <View style={[styles.bottomBtnWrap, { paddingBottom: insets.bottom + 8 }]}>
+          <TouchableOpacity
+            style={[
+              styles.ctaButton,
+              method ? styles.ctaActive : styles.ctaDisabled,
+            ]}
+            disabled={!method}
+            onPress={handlePayment}>
+            <Text style={styles.ctaText}>
+              Pay ₹{amount}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 export default PaymentScreen;
 
 const styles = StyleSheet.create({
-  bg: { flex: 1 },
-
-  container: {
+  root: {
     flex: 1,
-    paddingHorizontal: moderateScale(24),
-    paddingVertical: verticalScale(20),
+    backgroundColor: Colors.backgroundAlt,
   },
 
-  centerContent: {
-    flex: 1,
-    justifyContent: 'center',
+  header: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: moderateScale(16),
+    paddingBottom: verticalScale(26),
+    borderBottomLeftRadius: moderateScale(24),
+    borderBottomRightRadius: moderateScale(24),
+    alignItems: 'center',
   },
 
   title: {
-    fontSize: moderateScale(22),
-    fontWeight: '700',
     color: Colors.white,
-    textAlign: 'center',
-    marginBottom: verticalScale(6),
+    fontSize: moderateScale(20),
+    fontWeight: '700',
+  },
+
+  headerIcon: {
+    height: moderateScale(70),
+    width: moderateScale(70),
+    borderRadius: moderateScale(35),
+    borderWidth: 3,
+    borderColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: verticalScale(10),
+    backgroundColor: Colors.primary,
+  },
+
+  body: {
+    flex: 1,
+    paddingHorizontal: moderateScale(16),
+  },
+
+  content: {
+    flex: 1,
   },
 
   subtitle: {
     fontSize: moderateScale(14),
-    color: Colors.white,
+    color: Colors.textSecondary,
     textAlign: 'center',
-    marginBottom: verticalScale(30),
+    marginTop: verticalScale(16),
+    marginBottom: verticalScale(12),
   },
 
-  amountBox: {
+  card: {
     backgroundColor: Colors.white,
-    borderRadius: moderateScale(14),
-    paddingVertical: verticalScale(20),
-    alignItems: 'center',
-    marginBottom: verticalScale(30),
+    borderRadius: moderateScale(18),
+    padding: moderateScale(18),
+    marginTop: verticalScale(8),
+    elevation: 3,
   },
 
   amountLabel: {
     fontSize: moderateScale(14),
     color: Colors.textSecondary,
+    textAlign: 'center',
   },
 
   amount: {
-    fontSize: moderateScale(28),
+    fontSize: moderateScale(30),
     fontWeight: '700',
     color: Colors.primary,
-    marginTop: verticalScale(6),
+    textAlign: 'center',
+    marginTop: verticalScale(4),
+    marginBottom: verticalScale(20),
   },
 
   optionsWrapper: {
-    gap: verticalScale(16),
+    gap: verticalScale(14),
   },
 
   optionBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.lightWhite,
     borderRadius: moderateScale(12),
-    paddingVertical: verticalScale(16),
+    paddingVertical: verticalScale(14),
     paddingHorizontal: moderateScale(16),
     gap: moderateScale(12),
-    elevation: 4,
   },
 
   optionSelected: {
@@ -175,5 +233,44 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(15),
     color: Colors.textPrimary,
     fontWeight: '600',
+  },
+
+  bottomBtnWrap: {
+    paddingTop: verticalScale(10),
+  },
+
+  ctaButton: {
+    height: verticalScale(32),
+    borderRadius: moderateScale(6),
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    paddingHorizontal: moderateScale(28),
+  },
+
+  ctaActive: {
+    backgroundColor: Colors.accent,
+  },
+
+  ctaDisabled: {
+    backgroundColor: Colors.lightGray,
+  },
+
+  ctaText: {
+    fontSize: moderateScale(14),
+    fontWeight: '600',
+    color: Colors.white,
+  },
+
+  backBtn: {
+    position: 'absolute',
+    left: moderateScale(14),
+    height: moderateScale(36),
+    width: moderateScale(36),
+    borderRadius: moderateScale(18),
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
   },
 });

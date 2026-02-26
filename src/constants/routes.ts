@@ -7,4 +7,5 @@ export const Routes = {
   Payment: 'Payment',
   Home: 'Home',
   BottomTabs: 'BottomTabs',
+  ProviderDetails: 'ProviderDetails',
 };
