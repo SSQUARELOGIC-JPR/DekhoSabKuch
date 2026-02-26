@@ -93,12 +93,14 @@ const SettingsScreen: React.FC<ScreenProps> = () => {
           visible={logoutModal}
           title="Logout"
           subtitle="Are you sure you want to logout?"
-          onCancel={() => setLogoutModal(false)}
-          onConfirm={async () => {
+          onClose={() => setLogoutModal(false)}
+          onOk={async () => {
             setLogoutModal(false);
-            dispatch(logout());          // clear redux state
-            await persistor.purge();     // clear persisted storage
+            dispatch(logout());
+            await persistor.purge();
           }}
+          okText="Logout"
+          laterText="Cancel"
         />
 
         {/* Delete Modal */}
@@ -106,13 +108,14 @@ const SettingsScreen: React.FC<ScreenProps> = () => {
           visible={deleteModal}
           title="Delete Account"
           subtitle="This action cannot be undone!"
-          danger
-          onCancel={() => setDeleteModal(false)}
-          onConfirm={async () => {
+          onClose={() => setDeleteModal(false)}
+          onOk={async () => {
             setDeleteModal(false);
-            dispatch(logout()); // 🔥 same flow
+            dispatch(logout());
             await persistor.purge();
           }}
+          okText="Delete"
+          laterText="Cancel"
         />
       </View>
     </SafeAreaView>
