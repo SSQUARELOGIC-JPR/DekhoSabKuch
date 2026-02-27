@@ -3,11 +3,6 @@ import {
   View,
   StyleSheet,
   ImageBackground,
-  KeyboardAvoidingView,
-  Platform,
-  Image,
-  Text,
-  ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
@@ -16,17 +11,17 @@ import { useNavigation } from '@react-navigation/native';
 import { Routes } from '../constants/routes';
 
 import { Images } from '../constants/images';
-import { Strings } from '../constants/strings';
 import { Colors } from '../theme/colors';
+import { Typography } from '../theme/typography';
 
 import { AppInput } from '../components/AppInput';
 import { AppButton } from '../components/AppButton';
-import { Typography } from '../theme/typography';
-
 import AppHeaderLogo from '../components/AppHeaderLogo';
+import { useTranslation } from '../localization/useTranslation';
 
 const LoginScreen = () => {
   const navigation = useNavigation<any>();
+  const t = useTranslation();
 
   const [mobile, setMobile] = useState('');
 
@@ -37,15 +32,9 @@ const LoginScreen = () => {
   };
 
   const validateAndProceed = () => {
-    if (!mobile) {
-      return;
-    }
+    if (!mobile) return;
+    if (mobile.length !== 10) return;
 
-    if (mobile.length !== 10) {
-      return;
-    }
-
-    // All good
     navigation.navigate(Routes.Otp, { mobile });
   };
 
@@ -58,37 +47,37 @@ const LoginScreen = () => {
       resizeMode="cover"
     >
       <SafeAreaView style={styles.safe}>
-        <SafeAreaView style={styles.safe}>
-          <KeyboardAwareScrollView
-            contentContainerStyle={styles.scroll}
-            keyboardShouldPersistTaps="handled"
-            enableOnAndroid
-            extraScrollHeight={30}
-          >
-            <View style={styles.container}>
-              {/* Top Logo */}
-              <AppHeaderLogo />
+        <KeyboardAwareScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          enableOnAndroid
+          extraScrollHeight={30}
+        >
+          <View style={styles.container}>
+            {/* Top Logo */}
+            <AppHeaderLogo />
 
-              <View style={{ flex: 1 }} />
-              {/* Bottom Form */}
-              <View style={styles.bottom}>
-                <AppInput
-                  icon="phone"
-                  placeholder={Strings.login.mobilePlaceholder}
-                  value={mobile}
-                  onChangeText={handleChange}
-                  keyboardType="number-pad"
-                  maxLength={10}
-                />
-                <AppButton
-                  title={Strings.login.sendOtp}
-                  onPress={validateAndProceed}
-                  disabled={!isValid}
-                />
-              </View>
+            <View style={{ flex: 1 }} />
+
+            {/* Bottom Form */}
+            <View style={styles.bottom}>
+              <AppInput
+                icon="phone"
+                placeholder={t.login.mobilePlaceholder}
+                value={mobile}
+                onChangeText={handleChange}
+                keyboardType="number-pad"
+                maxLength={10}
+              />
+
+              <AppButton
+                title={t.login.sendOtp}
+                onPress={validateAndProceed}
+                disabled={!isValid}
+              />
             </View>
-          </KeyboardAwareScrollView>
-        </SafeAreaView>
+          </View>
+        </KeyboardAwareScrollView>
       </SafeAreaView>
     </ImageBackground>
   );
@@ -112,5 +101,5 @@ const styles = StyleSheet.create({
     gap: verticalScale(12),
     marginBottom: verticalScale(12),
     ...Typography.button,
-  }
+  },
 });

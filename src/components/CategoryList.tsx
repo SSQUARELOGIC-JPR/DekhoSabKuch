@@ -6,10 +6,17 @@ import { categories } from '../utils/providersData';
 import { CategoryListProps, Category } from '../types/interfaces';
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
+import { useTranslation } from '../localization/useTranslation';
+import { translateDynamic } from '../localization/translateDynamic';
 
 const CategoryList: React.FC<CategoryListProps> = ({ selected, onSelect }) => {
+  const t = useTranslation();
+
   const renderItem = ({ item }: { item: Category }) => {
     const isActive = selected === item.name;
+
+    // 🔥 Dynamic translation with fallback
+    const translatedName = translateDynamic(item.name, t.categories);
 
     return (
       <TouchableOpacity
@@ -23,7 +30,7 @@ const CategoryList: React.FC<CategoryListProps> = ({ selected, onSelect }) => {
           color={isActive ? Colors.white : Colors.primary}
         />
         <Text style={[styles.text, isActive && styles.activeText]}>
-          {item.name}
+          {translatedName}
         </Text>
       </TouchableOpacity>
     );
@@ -60,6 +67,7 @@ const styles = StyleSheet.create({
     marginRight: moderateScale(10),
     alignItems: 'center',
     elevation: 2,
+    minWidth: moderateScale(90),
   },
   activeCard: {
     backgroundColor: Colors.primary,

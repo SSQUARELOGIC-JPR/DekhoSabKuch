@@ -16,14 +16,15 @@ import { Colors } from '../theme/colors';
 import { RootState } from '../store';
 import { updatePaymentDone } from '../store/authSlice';
 import { Routes } from '../constants/routes';
-import { Strings } from '../constants/strings';
 import { ScreenProps, RoleType } from '../types/interfaces';
+import { useTranslation } from '../localization/useTranslation';
 
 type PaymentMethod = 'upi' | 'card' | 'cod';
 
 const PaymentScreen: React.FC<ScreenProps> = ({ navigation }) => {
   const dispatch = useDispatch();
   const insets = useSafeAreaInsets();
+  const t = useTranslation();
 
   const user = useSelector((state: RootState) => state.auth.user);
   const role: RoleType = user?.role || 'customer';
@@ -78,7 +79,6 @@ const PaymentScreen: React.FC<ScreenProps> = ({ navigation }) => {
     <View style={styles.root}>
       {/* HEADER */}
       <View style={[styles.header, { paddingTop: insets.top + verticalScale(10) }]}>
-
         {/* Back Button */}
         <TouchableOpacity
           style={[styles.backBtn, { top: insets.top + 6 }]}
@@ -86,7 +86,7 @@ const PaymentScreen: React.FC<ScreenProps> = ({ navigation }) => {
           <Icon name="arrow-left" size={22} color={Colors.white} />
         </TouchableOpacity>
 
-        <Text style={styles.title}>{Strings.payment.title}</Text>
+        <Text style={styles.title}>{t.payment.title}</Text>
 
         <View style={styles.headerIcon}>
           <Icon name="credit-card" size={26} color={Colors.white} />
@@ -101,22 +101,22 @@ const PaymentScreen: React.FC<ScreenProps> = ({ navigation }) => {
         {/* CONTENT */}
         <View style={styles.content}>
           <Text style={styles.subtitle}>
-            {Strings.payment.subtitle}
+            {t.payment.subtitle}
           </Text>
 
           <View style={styles.card}>
-            <Text style={styles.amountLabel}>Total Amount</Text>
+            <Text style={styles.amountLabel}>{t.payment.totalAmount}</Text>
             <Text style={styles.amount}>₹{amount}</Text>
 
             <View style={styles.optionsWrapper}>
-              <PaymentOption type="upi" title="Pay via UPI" icon="smartphone" />
-              <PaymentOption type="card" title="Credit / Debit Card" icon="credit-card" />
-              <PaymentOption type="cod" title="Pay Later (Approval)" icon="clock" />
+              <PaymentOption type="upi" title={t.payment.upi} icon="smartphone" />
+              <PaymentOption type="card" title={t.payment.card} icon="credit-card" />
+              <PaymentOption type="cod" title={t.payment.cod} icon="clock" />
             </View>
           </View>
         </View>
 
-        {/* BUTTON (Safe Area Fixed) */}
+        {/* BUTTON */}
         <View style={[styles.bottomBtnWrap, { paddingBottom: insets.bottom + 8 }]}>
           <TouchableOpacity
             style={[
@@ -126,7 +126,7 @@ const PaymentScreen: React.FC<ScreenProps> = ({ navigation }) => {
             disabled={!method}
             onPress={handlePayment}>
             <Text style={styles.ctaText}>
-              Pay ₹{amount}
+              {t.payment.pay} ₹{amount}
             </Text>
           </TouchableOpacity>
         </View>

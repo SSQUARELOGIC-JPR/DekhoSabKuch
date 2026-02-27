@@ -16,17 +16,19 @@ import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
 import { providers } from '../utils/providersData';
-import { Strings } from '../constants/strings';
 import CategoryList from '../components/CategoryList';
 import ProviderList from '../components/ProviderList';
 import AccessBlockModal from '../components/AccessBlockModal';
 import { Routes } from '../constants/routes';
 import { RootState } from '../store';
+import { useTranslation } from '../localization/useTranslation';
+import { translateDynamic } from '../localization/translateDynamic';
 
 const HomeScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const user = useSelector((state: RootState) => state.auth.user);
+  const t = useTranslation();
 
   const [selectedCategory, setSelectedCategory] =
     useState<string>('Electrician');
@@ -64,10 +66,15 @@ const HomeScreen = () => {
   };
 
   const filteredProviders = providers.filter(item => {
+    const translatedCategory = translateDynamic(item.category, t.categories);
+
     const matchCategory = item.category === selectedCategory;
+
     const matchSearch =
       item.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.category.toLowerCase().includes(search.toLowerCase());
+      item.category.toLowerCase().includes(search.toLowerCase()) ||
+      translatedCategory.toLowerCase().includes(search.toLowerCase());
+
     return matchCategory && matchSearch;
   });
 
@@ -79,8 +86,8 @@ const HomeScreen = () => {
           styles.topHeader,
           { paddingTop: insets.top + verticalScale(6) },
         ]}>
-        <Text style={styles.greeting}>{Strings.home.greeting}</Text>
-        <Text style={styles.title}>{Strings.home.title}</Text>
+        <Text style={styles.greeting}>{t.home.greeting}</Text>
+        <Text style={styles.title}>{t.home.title}</Text>
 
         <View style={styles.searchBar}>
           <Icon
@@ -89,7 +96,7 @@ const HomeScreen = () => {
             color={Colors.textPlaceholder}
           />
           <TextInput
-            placeholder={Strings.home.searchPlaceholder}
+            placeholder={t.home.searchPlaceholder}
             placeholderTextColor={Colors.textPlaceholder}
             style={styles.searchInput}
             value={search}
@@ -102,7 +109,7 @@ const HomeScreen = () => {
         {/* Categories */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {Strings.home.categories}
+            {t.home.categories}
           </Text>
 
           <CategoryList
@@ -115,15 +122,16 @@ const HomeScreen = () => {
         <View style={styles.featuredCard}>
           <View>
             <Text style={styles.featuredTitle}>
-              {Strings.home.topRated}
+              {t.home.topRated}
             </Text>
             <Text style={styles.featuredName}>
-              {filteredProviders[0]?.name || Strings.home.topRated}
+              {filteredProviders[0]?.name || t.home.topRated}
             </Text>
             <Text style={styles.featuredCategory}>
-              {selectedCategory}
+              {translateDynamic(selectedCategory, t.categories)}
             </Text>
           </View>
+
           <View style={styles.featuredAvatar}>
             <Icon
               name="person"
@@ -145,10 +153,10 @@ const HomeScreen = () => {
       {/* Access Block Modal */}
       <AccessBlockModal
         visible={showBlocked}
-        title={Strings.profile.title}
-        subtitle={Strings.profile.blockSubtitle}
-        laterText={Strings.profile.later}
-        okText={Strings.profile.completeNow}
+        title={t.profile.title}
+        subtitle={t.profile.blockSubtitle}
+        laterText={t.profile.later}
+        okText={t.profile.completeNow}
         onClose={() => setShowBlocked(false)}
         onOk={() => {
           setShowBlocked(false);

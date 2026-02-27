@@ -58,7 +58,15 @@ export interface ScreenProps<T = any> {
   navigation: T;
   route?: any;
 }
-
+export interface Category {
+  id: string;
+  name: string;
+  icon: string;
+}
+export interface CategoryListProps {
+  selected: string;
+  onSelect: (category: string) => void;
+}
 // ---------- HOME ----------
 export interface Provider {
   id: string;
@@ -89,4 +97,27 @@ export interface ConfirmModalProps {
   // 🔥 new optional props
   okText?: string;
   laterText?: string;
+}
+
+// ---------- ROLE SELECTION ----------
+export interface RoleCardProps {
+  title: string;
+  description: string;
+  icon: string;
+  value: RoleType;
+}
+
+export interface RoleSelectionScreenProps {
+  route: {
+    params?: {
+      mobile?: string;
+    };
+  };
+}
+// ---------- IMAGE PICKER MODAL ----------
+export interface ImagePickerModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onCamera: () => void;
+  onGallery: () => void;
 }

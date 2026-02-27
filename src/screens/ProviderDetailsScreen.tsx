@@ -14,11 +14,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
 import { ScreenProps } from '../types/interfaces';
-import { Strings } from '../constants/strings';
+import { useTranslation } from '../localization/useTranslation';
+import { translateDynamic } from '../localization/translateDynamic';
 
 const ProviderDetailsScreen: React.FC<ScreenProps> = ({ navigation, route }) => {
     const insets = useSafeAreaInsets();
     const provider = route?.params?.provider;
+    const t = useTranslation();
 
     const handleCall = () => {
         Linking.openURL(`tel:${provider.phone}`);
@@ -48,7 +50,9 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({ navigation, route }) => 
                 </View>
 
                 <Text style={styles.name}>{provider.name}</Text>
-                <Text style={styles.role}>{provider.category}</Text>
+                <Text style={styles.role}>
+                    {translateDynamic(provider.category, t.categories)}
+                </Text>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
@@ -58,7 +62,7 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({ navigation, route }) => 
                     <View style={styles.infoRow}>
                         <Icon name="map-pin" size={18} color={Colors.primary} />
                         <Text style={styles.infoText}>
-                            {Strings.providerDetails.location}: {provider.city}, Rajasthan, India
+                            {t.providerDetails.location}: {provider.city}, Rajasthan, India
                         </Text>
                     </View>
 
@@ -74,7 +78,7 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({ navigation, route }) => 
                     <View style={styles.infoRow}>
                         <Icon name="navigation" size={18} color={Colors.primary} />
                         <Text style={styles.infoText}>
-                            {Strings.providerDetails.distance}: 2.5 km away
+                            {t.providerDetails.distance}: 2.5 km away
                         </Text>
                     </View>
                 </View>
@@ -84,21 +88,21 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({ navigation, route }) => 
                     <View style={styles.statBox}>
                         <Text style={styles.statNumber}>{provider.experience || 5}+</Text>
                         <Text style={styles.statLabel}>
-                            {Strings.providerDetails.experience}
+                            {t.providerDetails.experience}
                         </Text>
                     </View>
 
                     <View style={styles.statBox}>
                         <Text style={styles.statNumber}>{provider.jobs || 120}+</Text>
                         <Text style={styles.statLabel}>
-                            {Strings.providerDetails.servicesDone}
+                            {t.providerDetails.servicesDone}
                         </Text>
                     </View>
 
                     <View style={styles.statBox}>
                         <Text style={styles.statNumber}>{provider.rating}</Text>
                         <Text style={styles.statLabel}>
-                            {Strings.providerDetails.rating}
+                            {t.providerDetails.rating}
                         </Text>
                     </View>
                 </View>
@@ -106,13 +110,13 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({ navigation, route }) => 
                 {/* ABOUT */}
                 <View style={styles.card}>
                     <Text style={styles.cardTitle}>
-                        {Strings.providerDetails.about}
+                        {t.providerDetails.about}
                     </Text>
                     <Text style={styles.cardDesc}>
-                        {provider.name} is a professional {provider.category} with over{' '}
-                        {provider.experience || 5} years of experience. He has successfully
-                        completed {provider.jobs || 120}+ services with high customer
-                        satisfaction and trusted quality work across the city.
+                        {provider.name} {t.providerDetails.aboutDesc1}{' '}
+                        {translateDynamic(provider.category, t.categories)} {t.providerDetails.aboutDesc2}{' '}
+                        {provider.experience || 5} {t.providerDetails.yearsExperience}{' '}
+                        {provider.jobs || 120}+ {t.providerDetails.servicesCompleted}
                     </Text>
                 </View>
 
@@ -121,14 +125,14 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({ navigation, route }) => 
                     <TouchableOpacity style={styles.callBtn} onPress={handleCall}>
                         <Icon name="phone" size={18} color={Colors.white} />
                         <Text style={styles.btnText}>
-                            {Strings.providerDetails.call}
+                            {t.providerDetails.call}
                         </Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.whatsappBtn} onPress={handleWhatsApp}>
                         <Icon name="message-circle" size={18} color={Colors.white} />
                         <Text style={styles.btnText}>
-                            {Strings.providerDetails.whatsapp}
+                            {t.providerDetails.whatsapp}
                         </Text>
                     </TouchableOpacity>
                 </View>

@@ -38,6 +38,9 @@ ios/DekhoSabKuch.xcworkspace/
 vendor/
 .bundle/
 
-android/.cxx/
-android/app/build/
 ios/build/
+
+android/app/.cxx/
+android/.cxx/
+android/build/
+android/app/build/

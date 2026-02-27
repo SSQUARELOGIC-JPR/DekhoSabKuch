@@ -15,11 +15,18 @@ import { useDispatch } from 'react-redux';
 import { logout } from '../store/authSlice'; // 👈 redux action
 import { persistor } from '../store';
 
+import { useTranslation } from '../localization/useTranslation';
+import { setLanguage } from '../store/languageSlice';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
+
 const SettingsScreen: React.FC<ScreenProps> = () => {
   const [logoutModal, setLogoutModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
 
   const dispatch = useDispatch();
+  const t = useTranslation();
+  const currentLang = useSelector((state: RootState) => state.language.currentLang);
 
   const SettingItem = ({
     title,
@@ -56,31 +63,44 @@ const SettingsScreen: React.FC<ScreenProps> = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}>
 
-          <Text style={styles.heading}>Settings</Text>
+          <Text style={styles.heading}>{t.settings.title}</Text>
 
           <View style={styles.card}>
-            <SettingItem title="Privacy Policy" icon="shield" onPress={() => { }} />
+            <SettingItem title={t.settings.privacy_policy} icon="shield" onPress={() => { }} />
             <View style={styles.divider} />
 
             <SettingItem
-              title="Terms & Conditions"
+              title={t.settings.terms_conditions}
               icon="file-text"
               onPress={() => { }}
             />
             <View style={styles.divider} />
 
-            <SettingItem title="Support" icon="help-circle" onPress={() => { }} />
+            <SettingItem title={t.settings.support} icon="help-circle" onPress={() => { }} />
             <View style={styles.divider} />
 
             <SettingItem
-              title="Logout"
+              title={
+                currentLang === 'en'
+                  ? `${t.common.change_language} "हिन्दी"`
+                  : `${t.common.change_language} "English"`
+              }
+              icon="globe"
+              onPress={() =>
+                dispatch(setLanguage(currentLang === 'en' ? 'hi' : 'en'))
+              }
+            />
+            <View style={styles.divider} />
+
+            <SettingItem
+              title={t.settings.logout}
               icon="log-out"
               onPress={() => setLogoutModal(true)}
             />
             <View style={styles.divider} />
 
             <SettingItem
-              title="Delete Account"
+              title={t.settings.delete_account}
               icon="trash-2"
               danger
               onPress={() => setDeleteModal(true)}
@@ -91,31 +111,31 @@ const SettingsScreen: React.FC<ScreenProps> = () => {
         {/* Logout Modal */}
         <ConfirmModal
           visible={logoutModal}
-          title="Logout"
-          subtitle="Are you sure you want to logout?"
+          title={t.settings.logout}
+          subtitle={t.settings.confirm_logout}
           onClose={() => setLogoutModal(false)}
           onOk={async () => {
             setLogoutModal(false);
             dispatch(logout());
             await persistor.purge();
           }}
-          okText="Logout"
-          laterText="Cancel"
+          okText={t.settings.logout}
+          laterText={t.common.cancel}
         />
 
         {/* Delete Modal */}
         <ConfirmModal
           visible={deleteModal}
-          title="Delete Account"
-          subtitle="This action cannot be undone!"
+          title={t.settings.delete_account}
+          subtitle={t.settings.confirm_delete}
           onClose={() => setDeleteModal(false)}
           onOk={async () => {
             setDeleteModal(false);
             dispatch(logout());
             await persistor.purge();
           }}
-          okText="Delete"
-          laterText="Cancel"
+          okText={t.settings.delete_account}
+          laterText={t.common.cancel}
         />
       </View>
     </SafeAreaView>

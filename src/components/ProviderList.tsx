@@ -13,7 +13,8 @@ import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
 import StarRating from './StarRating';
 import { ProviderListProps, Provider } from '../types/interfaces';
-import { Strings } from '../constants/strings';
+import { useTranslation } from '../localization/useTranslation';
+import { translateDynamic } from '../localization/translateDynamic';
 
 const ProviderList: React.FC<ProviderListProps> = ({
   data,
@@ -22,6 +23,8 @@ const ProviderList: React.FC<ProviderListProps> = ({
   onMessage,
   onViewProfile,
 }) => {
+  const t = useTranslation();
+
   const renderItem = ({ item }: { item: Provider }) => (
     <TouchableOpacity
       style={styles.card}
@@ -35,7 +38,11 @@ const ProviderList: React.FC<ProviderListProps> = ({
       {/* Info */}
       <View style={styles.info}>
         <Text style={styles.name}>{item.name}</Text>
-        <Text style={styles.category}>{item.category}</Text>
+
+        {/* 🔥 Dynamic category with fallback */}
+        <Text style={styles.category}>
+          {translateDynamic(item.category, t.categories)}
+        </Text>
 
         <StarRating rating={item.rating} />
 
@@ -97,7 +104,7 @@ const ProviderList: React.FC<ProviderListProps> = ({
       contentContainerStyle={styles.list}
       ListEmptyComponent={
         <Text style={styles.empty}>
-          {Strings.common.noProviders}
+          {t.common.noProviders}
         </Text>
       }
     />

@@ -3,11 +3,13 @@ import { View, Image, Text, StyleSheet } from 'react-native';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
 
 import { Images } from '../constants/images';
-import { Strings } from '../constants/strings';
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
+import { useTranslation } from '../localization/useTranslation';
 
 const AppHeaderLogo = () => {
+  const t = useTranslation();
+
   return (
     <View style={styles.top}>
       <Image
@@ -16,8 +18,8 @@ const AppHeaderLogo = () => {
         resizeMode="contain"
       />
       <View style={styles.textBlock}>
-        <Text style={styles.title}>{Strings.appName}</Text>
-        <Text style={styles.tagline}>{Strings.tagline}</Text>
+        <Text style={styles.title}>{t.splash.appName}</Text>
+        <Text style={styles.tagline}>{t.splash.tagline}</Text>
       </View>
     </View>
   );

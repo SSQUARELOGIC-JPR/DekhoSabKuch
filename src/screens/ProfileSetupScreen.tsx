@@ -20,10 +20,10 @@ import { AppInput } from '../components/AppInput';
 import { ImagePickerModal } from '../components/ImagePickerModal';
 import { requestCameraPermission } from '../utils/permissions';
 import { Routes } from '../constants/routes';
-import { Strings } from '../constants/strings';
 import { RootState } from '../store';
 import { updateProfileDone, updateUserProfile } from '../store/authSlice';
 import AccessBlockModal from '../components/AccessBlockModal';
+import { useTranslation } from '../localization/useTranslation';
 
 type RoleType = 'customer' | 'provider' | 'both';
 type DocType = 'profile' | 'aadharFront' | 'aadharBack';
@@ -33,6 +33,7 @@ const ProfileScreen = ({ navigation }: any) => {
   const user = useSelector((state: RootState) => state.auth.user);
   const role: RoleType = user?.role || 'customer';
   const insets = useSafeAreaInsets();
+  const t = useTranslation();
 
   const [profileImg, setProfileImg] = useState<string | null>(null);
   const [aadharFront, setAadharFront] = useState<string | null>(null);
@@ -151,7 +152,8 @@ const ProfileScreen = ({ navigation }: any) => {
     <View style={styles.root}>
       {/* HEADER */}
       <View style={[styles.header, { paddingTop: insets.top + verticalScale(10) }]}>
-        <Text style={styles.title}>{Strings.profile.title}</Text>
+        <Text style={styles.title}>{t.profile.profilePaggeTitle}</Text>
+
         {user?.profileDone && (
           <TouchableOpacity style={styles.editBtn} onPress={() => setIsEdit(!isEdit)}>
             <Icon
@@ -161,7 +163,7 @@ const ProfileScreen = ({ navigation }: any) => {
               style={{ marginRight: moderateScale(4) }}
             />
             <Text style={styles.editText}>
-              {isEdit ? 'Cancel' : Strings.profile.edit}
+              {isEdit ? t.common.cancel : t.profile.edit}
             </Text>
           </TouchableOpacity>
         )}
@@ -189,15 +191,15 @@ const ProfileScreen = ({ navigation }: any) => {
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           
           <View style={styles.card}>
-            <AppInput icon="user" placeholder={Strings.profile.name} value={name} onChangeText={setName} editable={isEdit} />
-            <AppInput icon="map-pin" placeholder={Strings.profile.address} value={address} onChangeText={setAddress} editable={isEdit} />
-            <AppInput icon="home" placeholder={Strings.profile.city} value={city} onChangeText={setCity} editable={isEdit} />
-            <AppInput icon="flag" placeholder={Strings.profile.state} value={stateVal} onChangeText={setStateVal} editable={isEdit} />
+            <AppInput icon="user" placeholder={t.profile.name} value={name} onChangeText={setName} editable={isEdit} />
+            <AppInput icon="map-pin" placeholder={t.profile.address} value={address} onChangeText={setAddress} editable={isEdit} />
+            <AppInput icon="home" placeholder={t.profile.city} value={city} onChangeText={setCity} editable={isEdit} />
+            <AppInput icon="flag" placeholder={t.profile.state} value={stateVal} onChangeText={setStateVal} editable={isEdit} />
             <AppInput
               icon="hash"
-              placeholder={Strings.profile.pincode}
+              placeholder={t.profile.pincode}
               value={pincode}
-              onChangeText={(t) => setPincode(t.replace(/[^0-9]/g, ''))}
+              onChangeText={(tVal) => setPincode(tVal.replace(/[^0-9]/g, ''))}
               keyboardType="number-pad"
               maxLength={6}
               editable={isEdit}
@@ -205,10 +207,10 @@ const ProfileScreen = ({ navigation }: any) => {
 
             {(role === 'provider' || role === 'both') && (
               <>
-                <Text style={styles.docTitle}>{Strings.profile.uploadId}</Text>
+                <Text style={styles.docTitle}>{t.profile.uploadId}</Text>
                 <View style={styles.row}>
-                  <UploadBox label="Front" image={aadharFront} docType="aadharFront" />
-                  <UploadBox label="Back" image={aadharBack} docType="aadharBack" />
+                  <UploadBox label={t.common.front} image={aadharFront} docType="aadharFront" />
+                  <UploadBox label={t.common.back} image={aadharBack} docType="aadharBack" />
                 </View>
               </>
             )}
@@ -227,7 +229,7 @@ const ProfileScreen = ({ navigation }: any) => {
               disabled={!isValid}
               onPress={handleSubmit}>
               <Text style={[styles.ctaText, !isValid && { color: Colors.textSecondary }]}>
-                {Strings.profile.continue}
+                {t.profile.continue}
               </Text>
             </TouchableOpacity>
           )}
@@ -251,10 +253,10 @@ const ProfileScreen = ({ navigation }: any) => {
       {/* SUCCESS MODAL */}
       <AccessBlockModal
         visible={showSuccess}
-        title={Strings.profile.updateSuccessTitle}
-        subtitle={Strings.profile.updateSuccessSubtitle}
-        laterText={Strings.profile.ok}
-        okText={Strings.profile.ok}
+        title={t.profile.updateSuccessTitle}
+        subtitle={t.profile.updateSuccessSubtitle}
+        laterText={t.profile.ok}
+        okText={t.profile.ok}
         showLater={false}
         onClose={() => setShowSuccess(false)}
         onOk={() => setShowSuccess(false)}

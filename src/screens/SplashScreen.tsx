@@ -10,12 +10,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
 
-import { Strings } from '../constants/strings';
 import { Images } from '../constants/images';
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
+import { useTranslation } from '../localization/useTranslation';
 
 const SplashScreen = () => {
+  const t = useTranslation();
+
   const fadeAnim = useRef(new Animated.Value(0.2)).current;
   const scaleAnim = useRef(new Animated.Value(0.6)).current;
 
@@ -84,13 +86,13 @@ const SplashScreen = () => {
               marginTop: verticalScale(14),
             }}
           >
-            <Text style={styles.title}>{Strings.appName}</Text>
-            <Text style={styles.tagline}>{Strings.tagline}</Text>
+            <Text style={styles.title}>{t.splash.appName}</Text>
+            <Text style={styles.tagline}>{t.splash.tagline}</Text>
           </Animated.View>
         </View>
 
         <Text style={styles.poweredBy}>
-          {Strings.common.poweredBy}
+          {t.common.poweredBy}
         </Text>
       </SafeAreaView>
     </ImageBackground>
