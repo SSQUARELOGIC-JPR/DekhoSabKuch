@@ -18,12 +18,13 @@ import { AppInput } from '../components/AppInput';
 import { AppButton } from '../components/AppButton';
 import AppHeaderLogo from '../components/AppHeaderLogo';
 import { useTranslation } from '../localization/useTranslation';
-
+import { sendOtpApi } from '../services/auth.api';
 const LoginScreen = () => {
   const navigation = useNavigation<any>();
   const t = useTranslation();
 
   const [mobile, setMobile] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Only allow numbers
   const handleChange = (text: string) => {
@@ -31,11 +32,20 @@ const LoginScreen = () => {
     setMobile(cleaned);
   };
 
-  const validateAndProceed = () => {
+  const validateAndProceed = async () => {
     if (!mobile) return;
     if (mobile.length !== 10) return;
 
-    navigation.navigate(Routes.Otp, { mobile });
+    try {
+      setLoading(true);
+      const res = await sendOtpApi(mobile);
+      console.log('API Response:', res); 
+
+      navigation.navigate(Routes.Otp, { mobile });
+    } catch (error) {
+      setLoading(false);
+      console.log('Send OTP Error:', error);
+    }
   };
 
   const isValid = mobile.length === 10;
@@ -74,6 +84,7 @@ const LoginScreen = () => {
                 title={t.login.sendOtp}
                 onPress={validateAndProceed}
                 disabled={!isValid}
+                loading={loading}
               />
             </View>
           </View>

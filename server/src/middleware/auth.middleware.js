@@ -1,0 +1,29 @@
+const jwt = require('jsonwebtoken');
+const messages = require('../constants/messages');
+
+module.exports = (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized: No token provided',
+      });
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // attach userId to request
+    req.userId = decoded.userId;
+
+    next();
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: 'Unauthorized: Invalid token',
+    });
+  }
+};
