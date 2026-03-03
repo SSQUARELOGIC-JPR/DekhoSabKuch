@@ -5,11 +5,13 @@ import { persistReducer, persistStore } from 'redux-persist';
 import authReducer from './authSlice';
 import languageReducer from './languageSlice';
 import errorReducer from './errorSlice'; 
+import sessionReducer from './sessionSlice';
 
 const rootReducer = combineReducers({
   auth: authReducer,
   language: languageReducer,
   error: errorReducer,
+  session: sessionReducer,
 });
 
 const persistConfig = {

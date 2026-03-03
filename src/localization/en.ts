@@ -8,6 +8,7 @@ export default {
     continue: 'Continue',
     front: 'Front',
     back: 'Back',
+    notAvailable: 'Not available',
   },
 
   settings: {
@@ -159,5 +160,7 @@ export default {
     sessionExpired: "Session expired. Please login again.",
     timeout: "Request timeout. Please try again.",
     noInternet: "No internet connection.",
+    connectionIssue: 'Unable to connect. Please check your internet connection.',
+    somethingWrong: 'Something went wrong.',
   }
 };

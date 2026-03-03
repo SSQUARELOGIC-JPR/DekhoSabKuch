@@ -19,8 +19,8 @@ import { AppButton } from '../components/AppButton';
 import { Routes } from '../constants/routes';
 import AppHeaderLogo from '../components/AppHeaderLogo';
 import { useTranslation } from '../localization/useTranslation';
-import ErrorBanner from '../components/ErrorBanner';
 import { verifyOtpApi, sendOtpApi } from '../services/api';
+import { apiHandler } from '../utils/apiHandler';
 
 const OtpScreen = ({ navigation, route }: any) => {
   const { mobile } = route.params || {};
@@ -29,10 +29,10 @@ const OtpScreen = ({ navigation, route }: any) => {
   const [otp, setOtp] = useState(['', '', '', '']);
   const [timer, setTimer] = useState(30);
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+
   const inputs = useRef<Array<TextInput | null>>([]);
 
-  // Countdown Timer
+  // ⏳ Countdown
   useEffect(() => {
     if (timer === 0) return;
 
@@ -45,7 +45,6 @@ const OtpScreen = ({ navigation, route }: any) => {
 
   const handleChange = (text: string, index: number) => {
     const cleaned = text.replace(/[^0-9]/g, '');
-
     const newOtp = [...otp];
     newOtp[index] = cleaned;
     setOtp(newOtp);
@@ -59,78 +58,65 @@ const OtpScreen = ({ navigation, route }: any) => {
     const newOtp = [...otp];
 
     if (otp[index]) {
-      // If current has value → clear it
       newOtp[index] = '';
-      setOtp(newOtp);
     } else if (index > 0) {
-      // If already empty → go back & clear previous
       inputs.current[index - 1]?.focus();
       newOtp[index - 1] = '';
-      setOtp(newOtp);
     }
+
+    setOtp(newOtp);
   };
 
   // 🔐 VERIFY OTP
   const handleVerify = async () => {
     const finalOtp = otp.join('');
-
     if (finalOtp.length !== 4) return;
 
-    try {
-      setLoading(true);
-      setErrorMsg('');
+    setLoading(true);
 
-      const res = await verifyOtpApi(mobile, finalOtp);
+    const res = await apiHandler(() =>
+      verifyOtpApi(mobile, finalOtp)
+    );
 
-      console.log('🔐 VERIFY OTP RES:', res);
+    setLoading(false);
 
-      if (res?.success) {
-        Vibration.vibrate(100);
+    if (!res) return;
 
-        // 👉 token + user params me pass
-        navigation.navigate(Routes.RoleSelection, {
-          mobile,
-          token: res.token,
-          user: res.user,
-        });
-      } else {
-        Vibration.vibrate([0, 200, 100, 200]);
-        setErrorMsg(res?.message || t.errors.invalidOtp);
-      }
-    } catch (error: any) {
-      console.log('❌ VERIFY OTP ERROR:', error);
-      Vibration.vibrate([0, 200, 100, 200]);
-      setErrorMsg(
-        error?.response?.data?.message || t.errors.network
-      );
-    } finally {
-      setLoading(false);
+    if (res.success) {
+      Vibration.vibrate(100);
+
+      navigation.navigate(Routes.RoleSelection, {
+        mobile,
+        token: res.token,
+        user: res.user,
+      });
     }
   };
 
   // 🔁 RESEND OTP
   const handleResend = async () => {
-    try {
-      setTimer(30);
-      setOtp(['', '', '', '']);
-      inputs.current[0]?.focus();
+    setTimer(30);
+    setOtp(['', '', '', '']);
+    inputs.current[0]?.focus();
 
-      await sendOtpApi(mobile);
+    const res = await apiHandler(() =>
+      sendOtpApi(mobile)
+    );
+
+    if (res) {
       Vibration.vibrate(100);
-    } catch (error) {
-      Vibration.vibrate([0, 200, 100, 200]);
-      setErrorMsg(t.errors.network);
     }
   };
 
   const isValid = otp.every(d => d !== '');
 
   return (
-    <ImageBackground source={Images.splashBg} style={styles.bg} resizeMode="cover">
+    <ImageBackground
+      source={Images.splashBg}
+      style={styles.bg}
+      resizeMode="cover"
+    >
       <SafeAreaView style={styles.safe}>
-        {/* 🔴 Top Error Banner */}
-        <ErrorBanner message={errorMsg} />
-
         <KeyboardAwareScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
@@ -143,17 +129,21 @@ const OtpScreen = ({ navigation, route }: any) => {
             <View style={{ flex: 1 }} />
 
             <View style={styles.bottom}>
-              <Text style={styles.heading}>{t.otp.enterOtp}</Text>
+              <Text style={styles.heading}>
+                {t.otp.enterOtp}
+              </Text>
 
               <View style={styles.otpRow}>
                 {otp.map((digit, index) => (
                   <TextInput
                     key={index}
-                    ref={(ref) => {
+                    ref={ref => {
                       inputs.current[index] = ref;
                     }}
                     value={digit}
-                    onChangeText={(text) => handleChange(text, index)}
+                    onChangeText={text =>
+                      handleChange(text, index)
+                    }
                     onKeyPress={({ nativeEvent }) => {
                       if (nativeEvent.key === 'Backspace') {
                         handleBackspace(index);
@@ -195,38 +185,32 @@ const OtpScreen = ({ navigation, route }: any) => {
 };
 
 export default OtpScreen;
+
 const styles = StyleSheet.create({
   bg: { flex: 1 },
-
   safe: { flex: 1 },
-
   scroll: {
     flexGrow: 1,
     justifyContent: 'space-between',
   },
-
   container: {
     flex: 1,
     paddingHorizontal: moderateScale(24),
     paddingVertical: verticalScale(10),
   },
-
   bottom: {
     gap: verticalScale(16),
     marginBottom: verticalScale(12),
   },
-
   heading: {
     textAlign: 'center',
     color: Colors.white,
     ...Typography.subtitle,
   },
-
   otpRow: {
     flexDirection: 'row',
     justifyContent: 'center',
   },
-
   otpBox: {
     height: moderateScale(55),
     width: moderateScale(55),
@@ -241,17 +225,14 @@ const styles = StyleSheet.create({
     elevation: 5,
     marginHorizontal: moderateScale(4),
   },
-
   resendContainer: {
     alignItems: 'center',
     marginTop: verticalScale(8),
   },
-
   timerText: {
     color: Colors.black,
     ...Typography.button,
   },
-
   resendText: {
     color: Colors.black,
     ...Typography.button,

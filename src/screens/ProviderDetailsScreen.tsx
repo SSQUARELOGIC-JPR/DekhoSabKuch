@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -19,41 +19,51 @@ import { ScreenProps } from '../types/interfaces';
 import { useTranslation } from '../localization/useTranslation';
 import { translateDynamic } from '../localization/translateDynamic';
 import { getProviderByIdApi } from '../services/api';
+import { apiHandler } from '../utils/apiHandler';
 import { ENV } from '../config/env';
 
-const ProviderDetailsScreen: React.FC<ScreenProps> = ({ navigation, route }) => {
+const ProviderDetailsScreen: React.FC<ScreenProps> = ({
+  navigation,
+  route,
+}) => {
   const insets = useSafeAreaInsets();
   const t = useTranslation();
 
   const initialProvider = route?.params?.provider;
   const providerId = route?.params?.providerId || initialProvider?._id;
 
-  const [provider, setProvider] = useState<any>(initialProvider || null);
+  const [provider, setProvider] = useState<any>(
+    initialProvider || null
+  );
   const [loading, setLoading] = useState(!initialProvider);
 
-  // 🔥 SAFE IMAGE HANDLER
   const getImageUri = (img?: string) => {
     if (!img) return undefined;
     if (img.startsWith('http') || img.startsWith('file')) return img;
     return ENV.IMAGE_BASE_URL + 'uploads/' + img;
   };
 
+  const fetchProvider = useCallback(async () => {
+    if (!providerId) return;
+
+    setLoading(true);
+
+    const res = await apiHandler(() =>
+      getProviderByIdApi(providerId)
+    );
+
+    setLoading(false);
+
+    if (!res?.provider) return;
+
+    setProvider(res.provider);
+  }, [providerId]);
+
   useEffect(() => {
     if (!initialProvider && providerId) {
       fetchProvider();
     }
-  }, []);
-
-  const fetchProvider = async () => {
-    try {
-      const res = await getProviderByIdApi(providerId);
-      setProvider(res.provider);
-    } catch (error) {
-      console.log('Provider detail error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchProvider]);
 
   const handleCall = () => {
     if (!provider?.mobile) return;
@@ -62,7 +72,9 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({ navigation, route }) => 
 
   const handleWhatsApp = () => {
     if (!provider?.mobile) return;
+
     const url = `whatsapp://send?phone=91${provider.mobile}`;
+
     Linking.openURL(url).catch(() => {
       Linking.openURL(`https://wa.me/91${provider.mobile}`);
     });
@@ -71,7 +83,10 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({ navigation, route }) => 
   if (loading) {
     return (
       <View style={styles.loader}>
-        <ActivityIndicator size="large" color={Colors.primary} />
+        <ActivityIndicator
+          size="large"
+          color={Colors.primary}
+        />
       </View>
     );
   }
@@ -80,7 +95,7 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({ navigation, route }) => 
     return (
       <View style={styles.loader}>
         <Text style={{ color: Colors.textPrimary }}>
-          Provider not available
+          {t.common.notAvailable || 'Not available'}
         </Text>
       </View>
     );
@@ -99,27 +114,54 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({ navigation, route }) => 
   return (
     <View style={styles.root}>
       {/* HEADER */}
-      <View style={[styles.header, { paddingTop: insets.top + verticalScale(8) }]}>
+      <View
+        style={[
+          styles.header,
+          { paddingTop: insets.top + verticalScale(8) },
+        ]}
+      >
         <TouchableOpacity
-          style={[styles.backBtn, { top: insets.top + 6 }]}
-          onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={22} color={Colors.white} />
+          style={[
+            styles.backBtn,
+            { top: insets.top + 6 },
+          ]}
+          onPress={() => navigation.goBack()}
+        >
+          <Icon
+            name="arrow-left"
+            size={22}
+            color={Colors.white}
+          />
         </TouchableOpacity>
 
         <View style={styles.avatar}>
           {provider.profileImage ? (
             <Image
-              source={{ uri: getImageUri(provider.profileImage) }}
+              source={{
+                uri: getImageUri(
+                  provider.profileImage
+                ),
+              }}
               style={styles.avatarImg}
             />
           ) : (
-            <Icon name="user" size={40} color={Colors.white} />
+            <Icon
+              name="user"
+              size={40}
+              color={Colors.white}
+            />
           )}
         </View>
 
-        <Text style={styles.name}>{provider.name}</Text>
+        <Text style={styles.name}>
+          {provider.name}
+        </Text>
+
         <Text style={styles.role}>
-          {translateDynamic(provider.category, t.categories)}
+          {translateDynamic(
+            provider.category,
+            t.categories
+          )}
         </Text>
       </View>
 
@@ -127,23 +169,45 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({ navigation, route }) => 
         {/* INFO CARD */}
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
-            <Icon name="map-pin" size={18} color={Colors.primary} />
+            <Icon
+              name="map-pin"
+              size={18}
+              color={Colors.primary}
+            />
             <Text style={styles.infoText}>
-              {t.providerDetails.location}: {fullAddress || '-'}
+              {t.providerDetails.location}:{' '}
+              {fullAddress || '-'}
             </Text>
           </View>
 
           <View style={styles.infoRow}>
-            <Icon name="star" size={18} color="#FFC107" />
-            <Text style={[styles.infoText, { color: '#FFC107', fontWeight: '700' }]}>
+            <Icon
+              name="star"
+              size={18}
+              color={Colors.warning}
+            />
+            <Text
+              style={[
+                styles.infoText,
+                {
+                  color: Colors.warning,
+                  fontWeight: '700',
+                },
+              ]}
+            >
               {provider.rating || 0} ⭐
             </Text>
           </View>
 
           <View style={styles.infoRow}>
-            <Icon name="briefcase" size={18} color={Colors.primary} />
+            <Icon
+              name="briefcase"
+              size={18}
+              color={Colors.primary}
+            />
             <Text style={styles.infoText}>
-              {t.providerDetails.servicesDone}: {provider.servicesDone || 0}+
+              {t.providerDetails.servicesDone}:{' '}
+              {provider.servicesDone || 0}+
             </Text>
           </View>
         </View>
@@ -151,24 +215,38 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({ navigation, route }) => 
         {/* STATS */}
         <View style={styles.statsCard}>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{provider.experience || 0}+</Text>
-            <Text style={styles.statLabel}>{t.providerDetails.experience}</Text>
+            <Text style={styles.statNumber}>
+              {provider.experience || 0}+
+            </Text>
+            <Text style={styles.statLabel}>
+              {t.providerDetails.experience}
+            </Text>
           </View>
 
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{provider.servicesDone || 0}+</Text>
-            <Text style={styles.statLabel}>{t.providerDetails.servicesDone}</Text>
+            <Text style={styles.statNumber}>
+              {provider.servicesDone || 0}+
+            </Text>
+            <Text style={styles.statLabel}>
+              {t.providerDetails.servicesDone}
+            </Text>
           </View>
 
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{provider.rating || 0}</Text>
-            <Text style={styles.statLabel}>{t.providerDetails.rating}</Text>
+            <Text style={styles.statNumber}>
+              {provider.rating || 0}
+            </Text>
+            <Text style={styles.statLabel}>
+              {t.providerDetails.rating}
+            </Text>
           </View>
         </View>
 
         {/* ABOUT */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>{t.providerDetails.about}</Text>
+          <Text style={styles.cardTitle}>
+            {t.providerDetails.about}
+          </Text>
           <Text style={styles.cardDesc}>
             {provider.about || '-'}
           </Text>
@@ -176,14 +254,32 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({ navigation, route }) => 
 
         {/* ACTION BUTTONS */}
         <View style={styles.actionsRow}>
-          <TouchableOpacity style={styles.callBtn} onPress={handleCall}>
-            <Icon name="phone" size={18} color={Colors.white} />
-            <Text style={styles.btnText}>{t.providerDetails.call}</Text>
+          <TouchableOpacity
+            style={styles.callBtn}
+            onPress={handleCall}
+          >
+            <Icon
+              name="phone"
+              size={18}
+              color={Colors.white}
+            />
+            <Text style={styles.btnText}>
+              {t.providerDetails.call}
+            </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.whatsappBtn} onPress={handleWhatsApp}>
-            <Icon name="message-circle" size={18} color={Colors.white} />
-            <Text style={styles.btnText}>{t.providerDetails.whatsapp}</Text>
+          <TouchableOpacity
+            style={styles.whatsappBtn}
+            onPress={handleWhatsApp}
+          >
+            <Icon
+              name="message-circle"
+              size={18}
+              color={Colors.white}
+            />
+            <Text style={styles.btnText}>
+              {t.providerDetails.whatsapp}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -329,7 +425,7 @@ const styles = StyleSheet.create({
 
   whatsappBtn: {
     flex: 1,
-    backgroundColor: '#25D366',
+    backgroundColor: Colors.whatsapp,
     borderRadius: moderateScale(12),
     flexDirection: 'row',
     justifyContent: 'center',
@@ -347,7 +443,6 @@ const styles = StyleSheet.create({
   backBtn: {
     position: 'absolute',
     left: moderateScale(14),
-    top: verticalScale(12),
     height: moderateScale(36),
     width: moderateScale(36),
     borderRadius: moderateScale(18),

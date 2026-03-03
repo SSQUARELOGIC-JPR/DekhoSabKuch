@@ -8,6 +8,7 @@ export default {
     continue: 'जारी रखें',
     front: 'फ्रंट',
     back: 'बैक',
+    notAvailable: 'उपलब्ध नहीं है',
   },
 
   settings: {
@@ -158,5 +159,7 @@ export default {
     sessionExpired: "सत्र समाप्त हो गया है। कृपया दोबारा लॉगिन करें।",
     timeout: "अनुरोध में समय अधिक लग रहा है। कृपया पुनः प्रयास करें।",
     noInternet: "इंटरनेट कनेक्शन उपलब्ध नहीं है।",
+    connectionIssue: 'कनेक्शन में समस्या है। कृपया अपना इंटरनेट चेक करें।',
+    somethingWrong: 'कुछ गलत हो गया।',
   }
 };

@@ -10,14 +10,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Feather';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
 import { useDispatch } from 'react-redux';
-import { useNavigation } from '@react-navigation/native';
 
 import { Images } from '../constants/images';
 import { Colors } from '../theme/colors';
 import { AppButton } from '../components/AppButton';
 import AppHeaderLogo from '../components/AppHeaderLogo';
 import { loginSuccess } from '../store/authSlice';
-import { Routes } from '../constants/routes';
+import { openSessionExpired } from '../store/sessionSlice';
 
 import {
   RoleType,
@@ -27,10 +26,11 @@ import {
 } from '../types/interfaces';
 import { useTranslation } from '../localization/useTranslation';
 
-const RoleSelectionScreen = ({ route }: RoleSelectionScreenProps) => {
+const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({
+  route,
+}) => {
   const [role, setRole] = useState<RoleType>(null);
   const dispatch = useDispatch();
-  const navigation = useNavigation<any>();
   const t = useTranslation();
 
   const mobile = route?.params?.mobile ?? '';
@@ -38,14 +38,24 @@ const RoleSelectionScreen = ({ route }: RoleSelectionScreenProps) => {
   const userFromApi = route?.params?.user;
 
   const handleContinue = () => {
-    if (!role || !mobile || !token || !userFromApi) return;
+    if (!role) return;
+
+    // 🔐 Defensive session check
+    if (!mobile || !token || !userFromApi) {
+      dispatch(openSessionExpired());
+      return;
+    }
 
     const userData: AuthUser = {
       ...userFromApi,
       mobile,
       role,
-      profileDone: false,
-      paymentDone: false,
+      profileDone: userFromApi.profileDone ?? false,
+      paymentDone: userFromApi.paymentDone ?? false,
+      isUserProfileComplete:
+        userFromApi.isUserProfileComplete ?? false,
+      isProviderProfileComplete:
+        userFromApi.isProviderProfileComplete ?? false,
     };
 
     dispatch(

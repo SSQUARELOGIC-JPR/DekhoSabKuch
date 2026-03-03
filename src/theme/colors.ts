@@ -25,4 +25,6 @@ export const Colors = {
   border: '#E2E8F0',
   disabled: '#CBD5E1',
   error: '#FF3B30',
+  warning: '#FFC107',      
+  whatsapp: '#25D366',
 };

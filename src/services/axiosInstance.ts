@@ -1,9 +1,8 @@
 import axios from 'axios';
 import { ENV } from '../config/env';
 import { store } from '../store';
-import { logout } from '../store/authSlice';
-import { persistor } from '../store';
 import { showError } from '../store/errorSlice';
+import { openSessionExpired } from '../store/sessionSlice';
 import { Vibration } from 'react-native';
 
 import en from '../localization/en';
@@ -19,7 +18,7 @@ const instance = axios.create({
   },
 });
 
-let isLoggingOut = false;
+let isSessionHandling = false;
 
 instance.interceptors.request.use(
   config => {
@@ -41,69 +40,68 @@ instance.interceptors.response.use(
     const dispatch = store.dispatch;
     const state = store.getState();
     const currentLang = state.language.currentLang;
-
-    const t = translations[currentLang];
+    const t = translations[currentLang] || translations.en;
 
     const status = error?.response?.status;
-    const code = error?.code;
 
-    // 🔐 SESSION EXPIRED
-    if (status === 401 && !isLoggingOut) {
-      isLoggingOut = true;
+    // ===============================
+    // 🔐 401 SESSION EXPIRED
+    // ===============================
+    if (status === 401 && !isSessionHandling) {
+      isSessionHandling = true;
 
       Vibration.vibrate([0, 200, 100, 200]);
 
-      dispatch(
-        showError({
-          message: t.errors.sessionExpired,
-          type: 'warning',
-        })
-      );
+      dispatch(openSessionExpired());
 
-      dispatch(logout());
-      await persistor.purge();
-
+      // prevent multiple triggers
       setTimeout(() => {
-        isLoggingOut = false;
+        isSessionHandling = false;
       }, 1000);
 
       return Promise.reject(error);
     }
 
-    // ⏱️ TIMEOUT
-    if (code === 'ECONNABORTED') {
-      Vibration.vibrate([0, 200, 100, 200]);
-
-      dispatch(
-        showError({
-          message: t.errors.timeout,
-        })
-      );
-
-      return Promise.reject(error);
-    }
-
-    // 🌐 NO INTERNET
+    // ===============================
+    // 🌐 CONNECTION ISSUE
+    // ===============================
     if (!error.response) {
       Vibration.vibrate([0, 200, 100, 200]);
 
       dispatch(
         showError({
-          message: t.errors.noInternet,
+          message:
+            t?.errors?.connectionIssue ||
+            'Unable to connect. Please check your internet connection.',
         })
       );
 
       return Promise.reject(error);
     }
 
-    // 🔴 Backend error message
+    // ===============================
+    // 🔴 BACKEND ERROR
+    // ===============================
     if (error.response?.data?.message) {
       dispatch(
         showError({
           message: error.response.data.message,
         })
       );
+
+      return Promise.reject(error);
     }
+
+    // ===============================
+    // 🔥 FALLBACK
+    // ===============================
+    dispatch(
+      showError({
+        message:
+          t?.errors?.somethingWrong ||
+          'Something went wrong.',
+      })
+    );
 
     return Promise.reject(error);
   },

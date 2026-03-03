@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -25,18 +25,22 @@ import { RootState } from '../store';
 import { useTranslation } from '../localization/useTranslation';
 import { translateDynamic } from '../localization/translateDynamic';
 import { getProvidersApi } from '../services/api';
+import { apiHandler } from '../utils/apiHandler';
 import { ENV } from '../config/env';
+
 const LIMIT = 20;
 
 const HomeScreen = () => {
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const user = useSelector((state: RootState) => state.auth.user);
   const t = useTranslation();
 
-  const [selectedCategory, setSelectedCategory] = useState<string>('Electrician');
-  const [redirectTo, setRedirectTo] = useState<'profile' | 'payment' | null>(null);
-  const [search, setSearch] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] =
+    useState<string>('Electrician');
+  const [redirectTo, setRedirectTo] =
+    useState<'profile' | 'payment' | null>(null);
+  const [search, setSearch] = useState('');
   const [showBlocked, setShowBlocked] = useState(false);
 
   const [providers, setProviders] = useState<any[]>([]);
@@ -44,47 +48,48 @@ const HomeScreen = () => {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchProviders(1);
-  }, []);
+  // ===============================
+  // 📡 FETCH PROVIDERS
+  // ===============================
+  const fetchProviders = useCallback(
+    async (pageNumber: number) => {
+      if (loading || (!hasMore && pageNumber !== 1)) return;
 
-  const fetchProviders = async (pageNumber: number) => {
-    if (loading || (!hasMore && pageNumber !== 1)) return;
-
-    try {
       setLoading(true);
-      const res = await getProvidersApi(pageNumber, LIMIT);
 
-      console.log('👨‍🔧 PROVIDERS API:', res);
+      const res = await apiHandler(() =>
+        getProvidersApi(pageNumber, LIMIT)
+      );
+
+      setLoading(false);
+
+      if (!res) return;
 
       const newProviders = res?.providers || [];
 
       setProviders(prev => {
         const merged =
-          pageNumber === 1 ? newProviders : [...prev, ...newProviders];
+          pageNumber === 1
+            ? newProviders
+            : [...prev, ...newProviders];
 
-        // 🔥 Remove duplicate providers by _id
-        const unique = Array.from(
-          new Map(merged.map((item: { _id: any; }) => [item._id, item])).values()
-        );
+        const uniqueMap = new Map();
+        merged.forEach((item: { _id: any; }) => {
+          uniqueMap.set(item._id, item);
+        });
 
-        return unique;
+        return Array.from(uniqueMap.values());
       });
 
-      // 📄 hasMore logic (pagination end detection)
-      if (newProviders.length < LIMIT) {
-        setHasMore(false);
-      } else {
-        setHasMore(true);
-      }
-
+      setHasMore(newProviders.length === LIMIT);
       setPage(pageNumber);
-    } catch (error) {
-      console.log('❌ PROVIDERS ERROR:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [loading, hasMore]
+  );
+
+  useEffect(() => {
+    fetchProviders(1);
+  }, []);
 
   const loadMore = () => {
     if (!loading && hasMore) {
@@ -92,15 +97,16 @@ const HomeScreen = () => {
     }
   };
 
+  // ===============================
+  // 🔐 ACCESS CONTROL
+  // ===============================
   const checkAccess = () => {
-    // Profile incomplete
     if (!user?.profileDone) {
       setRedirectTo('profile');
       setShowBlocked(true);
       return false;
     }
 
-    // Payment incomplete
     if (!user?.paymentDone) {
       setRedirectTo('payment');
       setShowBlocked(true);
@@ -117,6 +123,7 @@ const HomeScreen = () => {
 
   const handleWhatsApp = (phone: string) => {
     if (!checkAccess()) return;
+
     const url = `whatsapp://send?phone=91${phone}`;
     Linking.openURL(url).catch(() => {
       Linking.openURL(`https://wa.me/91${phone}`);
@@ -125,22 +132,36 @@ const HomeScreen = () => {
 
   const handleViewProfile = (provider: any) => {
     if (!checkAccess()) return;
-    (navigation as any).navigate(Routes.ProviderDetails, { provider });
+    navigation.navigate(Routes.ProviderDetails, { provider });
   };
 
+  // ===============================
+  // 🔎 FILTER LOGIC
+  // ===============================
   const filteredProviders = providers.filter(item => {
-    const translatedCategory = translateDynamic(item.category, t.categories);
+    const translatedCategory = translateDynamic(
+      item.category,
+      t.categories
+    );
 
     const matchCategory =
-      !selectedCategory || item.category === selectedCategory;
+      !selectedCategory ||
+      item.category === selectedCategory;
 
     const matchSearch =
-      item.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.category.toLowerCase().includes(search.toLowerCase()) ||
-      translatedCategory.toLowerCase().includes(search.toLowerCase());
+      item.name
+        .toLowerCase()
+        .includes(search.toLowerCase()) ||
+      item.category
+        .toLowerCase()
+        .includes(search.toLowerCase()) ||
+      translatedCategory
+        .toLowerCase()
+        .includes(search.toLowerCase());
 
     return matchCategory && matchSearch;
   });
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -148,9 +169,14 @@ const HomeScreen = () => {
         style={[
           styles.topHeader,
           { paddingTop: insets.top + verticalScale(6) },
-        ]}>
-        <Text style={styles.greeting}>{t.home.greeting}</Text>
-        <Text style={styles.title}>{t.home.title}</Text>
+        ]}
+      >
+        <Text style={styles.greeting}>
+          {t.home.greeting}
+        </Text>
+        <Text style={styles.title}>
+          {t.home.title}
+        </Text>
 
         <View style={styles.searchBar}>
           <Icon
@@ -171,14 +197,15 @@ const HomeScreen = () => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         onScroll={({ nativeEvent }) => {
-          const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+          const { layoutMeasurement, contentOffset, contentSize } =
+            nativeEvent;
 
           const isEndReached =
-            layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
+            layoutMeasurement.height +
+              contentOffset.y >=
+            contentSize.height - 20;
 
-          if (isEndReached && hasMore && !loading) {
-            loadMore();
-          }
+          if (isEndReached) loadMore();
         }}
         scrollEventThrottle={400}
       >
@@ -195,42 +222,48 @@ const HomeScreen = () => {
         </View>
 
         {/* Featured */}
-        <View style={styles.featuredCard}>
-          <View>
-            <Text style={styles.featuredTitle}>
-              {t.home.topRated}
-            </Text>
+        {filteredProviders.length > 0 && (
+          <View style={styles.featuredCard}>
+            <View>
+              <Text style={styles.featuredTitle}>
+                {t.home.topRated}
+              </Text>
 
-            <Text style={styles.featuredName}>
-              {filteredProviders[0]?.name || t.home.topRated}
-            </Text>
+              <Text style={styles.featuredName}>
+                {filteredProviders[0]?.name}
+              </Text>
 
-            <Text style={styles.featuredCategory}>
-              {translateDynamic(selectedCategory, t.categories)}
-            </Text>
+              <Text style={styles.featuredCategory}>
+                {translateDynamic(
+                  selectedCategory,
+                  t.categories
+                )}
+              </Text>
+            </View>
+
+            <View style={styles.featuredAvatar}>
+              {filteredProviders[0]?.profileImage ? (
+                <Image
+                  source={{
+                    uri:
+                      ENV.IMAGE_BASE_URL +
+                      'uploads/' +
+                      filteredProviders[0]
+                        .profileImage,
+                  }}
+                  style={styles.featuredAvatar}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Icon
+                  name="person"
+                  size={moderateScale(24)}
+                  color={Colors.white}
+                />
+              )}
+            </View>
           </View>
-
-          <View style={styles.featuredAvatar}>
-            {filteredProviders[0]?.profileImage ? (
-              <Image
-                source={{
-                  uri:
-                    ENV.IMAGE_BASE_URL +
-                    'uploads/' +
-                    filteredProviders[0].profileImage,
-                }}
-                style={styles.featuredAvatar}
-                resizeMode="cover"
-              />
-            ) : (
-              <Icon
-                name="person"
-                size={moderateScale(24)}
-                color={Colors.white}
-              />
-            )}
-          </View>
-        </View>
+        )}
 
         {/* Provider List */}
         <ProviderList
@@ -265,9 +298,9 @@ const HomeScreen = () => {
           setShowBlocked(false);
 
           if (redirectTo === 'profile') {
-            (navigation as any).navigate(Routes.Profile);
+            navigation.navigate(Routes.Profile);
           } else if (redirectTo === 'payment') {
-            (navigation as any).navigate(Routes.Payment);
+            navigation.navigate(Routes.Payment);
           }
         }}
       />

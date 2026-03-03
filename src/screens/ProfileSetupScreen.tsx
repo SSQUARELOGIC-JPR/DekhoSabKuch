@@ -8,6 +8,7 @@ import {
   ScrollView,
   Platform,
   Text,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
@@ -25,6 +26,7 @@ import { updateProfileDone, updateUserProfile } from '../store/authSlice';
 import AccessBlockModal from '../components/AccessBlockModal';
 import { useTranslation } from '../localization/useTranslation';
 import { updateProfileApi } from '../services/api';
+import { apiHandler } from '../utils/apiHandler';
 import { ENV } from '../config/env';
 
 type RoleType = 'customer' | 'provider' | 'both';
@@ -36,6 +38,8 @@ const ProfileScreen = ({ navigation }: any) => {
   const role: RoleType = user?.role || 'customer';
   const insets = useSafeAreaInsets();
   const t = useTranslation();
+
+  const [loading, setLoading] = useState(false);
 
   const [profileImg, setProfileImg] = useState<string | null>(null);
   const [aadharFrontImage, setAadharFrontImage] = useState<string | null>(null);
@@ -58,14 +62,9 @@ const ProfileScreen = ({ navigation }: any) => {
   const [isEdit, setIsEdit] = useState(!user?.profileDone);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // 🔥 SAFE IMAGE URI HANDLER
   const getImageUri = (img?: string | null) => {
     if (!img) return undefined;
-
-    if (img.startsWith('file') || img.startsWith('http')) {
-      return img;
-    }
-
+    if (img.startsWith('file') || img.startsWith('http')) return img;
     return ENV.IMAGE_BASE_URL + 'uploads/' + img;
   };
 
@@ -122,63 +121,64 @@ const ProfileScreen = ({ navigation }: any) => {
         about.trim().length > 0));
 
   const handleSubmit = async () => {
-    if (!isValid) return;
+    if (!isValid || loading) return;
 
-    try {
-      const formData = new FormData();
+    setLoading(true);
 
-      formData.append('role', role);
-      formData.append('name', name);
-      formData.append('village', village);
-      formData.append('tehsil', tehsil);
-      formData.append('city', city);
-      formData.append('state', stateVal);
-      formData.append('pincode', pincode);
-      formData.append('category', category);
-      formData.append('experience', String(experience));
-      formData.append('about', about);
+    const formData = new FormData();
 
-      // 🔥 PROFILE IMAGE
-      if (profileImg && profileImg.startsWith('file')) {
-        formData.append('profileImage', {
-          uri: profileImg,
-          name: 'profile.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
+    formData.append('role', role);
+    formData.append('name', name.trim());
+    formData.append('village', village.trim());
+    formData.append('tehsil', tehsil.trim());
+    formData.append('city', city.trim());
+    formData.append('state', stateVal.trim());
+    formData.append('pincode', pincode);
+    formData.append('category', category.trim());
+    formData.append('experience', experience);
+    formData.append('about', about.trim());
 
-      // 🔥 AADHAR FRONT (only if new)
-      if (aadharFrontImage && aadharFrontImage.startsWith('file')) {
-        formData.append('aadharFrontImage', {
-          uri: aadharFrontImage,
-          name: 'aadharFront.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
+    if (profileImg?.startsWith('file')) {
+      formData.append('profileImage', {
+        uri: profileImg,
+        name: 'profile.jpg',
+        type: 'image/jpeg',
+      } as any);
+    }
 
-      // 🔥 AADHAR BACK (only if new)
-      if (aadharBackImage && aadharBackImage.startsWith('file')) {
-        formData.append('aadharBackImage', {
-          uri: aadharBackImage,
-          name: 'aadharBack.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
+    if (aadharFrontImage?.startsWith('file')) {
+      formData.append('aadharFrontImage', {
+        uri: aadharFrontImage,
+        name: 'aadharFront.jpg',
+        type: 'image/jpeg',
+      } as any);
+    }
 
-      const res = await updateProfileApi(formData);
+    if (aadharBackImage?.startsWith('file')) {
+      formData.append('aadharBackImage', {
+        uri: aadharBackImage,
+        name: 'aadharBack.jpg',
+        type: 'image/jpeg',
+      } as any);
+    }
 
-      dispatch(updateUserProfile(res.data));
-      dispatch(updateProfileDone());
+    const res = await apiHandler(() =>
+      updateProfileApi(formData)
+    );
 
-      setIsEdit(false);
+    setLoading(false);
 
-      if (!res.data.paymentDone) {
-        navigation.navigate(Routes.Payment, { role });
-      } else {
-        setShowSuccess(true);
-      }
-    } catch (error) {
-      console.log('Profile update error:', error);
+    if (!res?.data) return;
+
+    dispatch(updateUserProfile(res.data));
+    dispatch(updateProfileDone());
+
+    setIsEdit(false);
+
+    if (!res.data.paymentDone) {
+      navigation.navigate(Routes.Payment, { role });
+    } else {
+      setShowSuccess(true);
     }
   };
 
@@ -199,7 +199,10 @@ const ProfileScreen = ({ navigation }: any) => {
         setShowPicker(true);
       }}>
       {image ? (
-        <Image source={{ uri: getImageUri(image) }} style={styles.docImg} />
+        <Image
+          source={{ uri: getImageUri(image) }}
+          style={styles.docImg}
+        />
       ) : (
         <>
           <Icon name="upload" size={20} color={Colors.primary} />
@@ -215,8 +218,14 @@ const ProfileScreen = ({ navigation }: any) => {
         <Text style={styles.title}>{t.profile.profilePaggeTitle}</Text>
 
         {user?.profileDone && (
-          <TouchableOpacity style={styles.editBtn} onPress={() => setIsEdit(!isEdit)}>
-            <Icon name={isEdit ? 'x' : 'edit-2'} size={14} color={Colors.white} />
+          <TouchableOpacity
+            style={styles.editBtn}
+            onPress={() => setIsEdit(!isEdit)}>
+            <Icon
+              name={isEdit ? 'x' : 'edit-2'}
+              size={14}
+              color={Colors.white}
+            />
             <Text style={styles.editText}>
               {isEdit ? t.common.cancel : t.profile.edit}
             </Text>
@@ -244,67 +253,34 @@ const ProfileScreen = ({ navigation }: any) => {
       <KeyboardAvoidingView
         style={styles.body}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <ScrollView showsVerticalScrollIndicator={false}>
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>{t.profile.personalInfo}</Text>
+            <Text style={styles.sectionTitle}>
+              {t.profile.personalInfo}
+            </Text>
 
             <AppInput icon="user" placeholder={t.profile.name} value={name} onChangeText={setName} editable={isEdit} />
+            <AppInput icon="phone" placeholder="Mobile Number" value={user?.mobile || ''} editable={false} />
 
-            <AppInput
-              icon="phone"
-              placeholder="Mobile Number"
-              value={user?.mobile || ''}
-              editable={false}
-              onChangeText={() => { }}
-            />
-
-            <Text style={styles.sectionTitle}>{t.profile.addressDetails}</Text>
+            <Text style={styles.sectionTitle}>
+              {t.profile.addressDetails}
+            </Text>
 
             <AppInput icon="map" placeholder={t.profile.village} value={village} onChangeText={setVillage} editable={isEdit} />
             <AppInput icon="map-pin" placeholder={t.profile.tehsil} value={tehsil} onChangeText={setTehsil} editable={isEdit} />
             <AppInput icon="home" placeholder={t.profile.city} value={city} onChangeText={setCity} editable={isEdit} />
             <AppInput icon="flag" placeholder={t.profile.state} value={stateVal} onChangeText={setStateVal} editable={isEdit} />
-            <AppInput
-              icon="hash"
-              placeholder={t.profile.pincode}
-              value={pincode}
-              onChangeText={(tVal) => setPincode(tVal.replace(/[^0-9]/g, ''))}
-              keyboardType="number-pad"
-              maxLength={6}
-              editable={isEdit}
-            />
+            <AppInput icon="hash" placeholder={t.profile.pincode} value={pincode} onChangeText={(v)=>setPincode(v.replace(/[^0-9]/g,''))} keyboardType="number-pad" maxLength={6} editable={isEdit} />
 
             {(role === 'provider' || role === 'both') && (
               <>
-                <Text style={styles.sectionTitle}>{t.profile.professionalDetails}</Text>
+                <Text style={styles.sectionTitle}>
+                  {t.profile.professionalDetails}
+                </Text>
 
-                <AppInput
-                  icon="tool"
-                  placeholder={t.profile.category}
-                  value={category}
-                  onChangeText={setCategory}
-                  editable={isEdit}
-                />
-
-                <AppInput
-                  icon="award"
-                  placeholder={t.profile.experience}
-                  value={experience}
-                  onChangeText={(v) => setExperience(v.replace(/[^0-9]/g, ''))}
-                  keyboardType="number-pad"
-                  editable={isEdit}
-                />
-
-                <AppInput
-                  icon="file-text"
-                  placeholder={t.profile.aboutService}
-                  value={about}
-                  onChangeText={setAbout}
-                  editable={isEdit}
-                  multiline
-                  numberOfLines={4}
-                  inputStyle={styles.textArea}
-                />
+                <AppInput icon="tool" placeholder={t.profile.category} value={category} onChangeText={setCategory} editable={isEdit} />
+                <AppInput icon="award" placeholder={t.profile.experience} value={experience} onChangeText={(v)=>setExperience(v.replace(/[^0-9]/g,''))} keyboardType="number-pad" editable={isEdit} />
+                <AppInput icon="file-text" placeholder={t.profile.aboutService} value={about} onChangeText={setAbout} editable={isEdit} multiline numberOfLines={4} inputStyle={styles.textArea} />
 
                 <Text style={styles.docTitle}>{t.profile.uploadId}</Text>
                 <View style={styles.row}>
@@ -316,21 +292,23 @@ const ProfileScreen = ({ navigation }: any) => {
           </View>
         </ScrollView>
 
-        <View style={styles.bottomBtnWrap}>
-          {isEdit && (
-            <TouchableOpacity
-              style={[
-                styles.ctaButton,
-                isValid ? styles.ctaActive : styles.ctaDisabled,
-              ]}
-              disabled={!isValid}
-              onPress={handleSubmit}>
-              <Text style={[styles.ctaText, !isValid && { color: Colors.textSecondary }]}>
+        {isEdit && (
+          <TouchableOpacity
+            style={[
+              styles.ctaButton,
+              isValid ? styles.ctaActive : styles.ctaDisabled,
+            ]}
+            disabled={!isValid || loading}
+            onPress={handleSubmit}>
+            {loading ? (
+              <ActivityIndicator color={Colors.white} />
+            ) : (
+              <Text style={styles.ctaText}>
                 {t.profile.continue}
               </Text>
-            </TouchableOpacity>
-          )}
-        </View>
+            )}
+          </TouchableOpacity>
+        )}
       </KeyboardAvoidingView>
 
       <ImagePickerModal

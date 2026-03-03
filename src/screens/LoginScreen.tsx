@@ -3,7 +3,6 @@ import {
   View,
   StyleSheet,
   ImageBackground,
-  Vibration
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
@@ -12,16 +11,15 @@ import { useNavigation } from '@react-navigation/native';
 import { Routes } from '../constants/routes';
 
 import { Images } from '../constants/images';
-import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
 
 import { AppInput } from '../components/AppInput';
 import { AppButton } from '../components/AppButton';
 import AppHeaderLogo from '../components/AppHeaderLogo';
 import { useTranslation } from '../localization/useTranslation';
-import { sendOtpApi } from '../services/api';
-import ErrorBanner from '../components/ErrorBanner';
 
+import { sendOtpApi } from '../services/api';
+import { apiHandler } from '../utils/apiHandler';
 
 const LoginScreen = () => {
   const navigation = useNavigation<any>();
@@ -29,7 +27,6 @@ const LoginScreen = () => {
 
   const [mobile, setMobile] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
 
   // Only allow numbers
   const handleChange = (text: string) => {
@@ -41,30 +38,19 @@ const LoginScreen = () => {
     if (!mobile) return;
     if (mobile.length !== 10) return;
 
-    try {
-      setLoading(true);
-      setErrorMsg('');
+    setLoading(true);
 
-      const res = await sendOtpApi(mobile);
+    const res = await apiHandler(() =>
+      sendOtpApi(mobile)
+    );
 
-      console.log("df");
-
-      if (res?.success) {
-        navigation.navigate(Routes.Otp, { mobile });
-      } else {
-        Vibration.vibrate([0, 200, 100, 200]);
-        setErrorMsg(res?.message || t.errors.otpFailed);
-      }
-
-    } catch (error: any) {
-      Vibration.vibrate([0, 200, 100, 200]);
-      setErrorMsg(
-        error?.response?.data?.message || t.errors.network
-      );
-    } finally {
-      setLoading(false);
+    if (res?.success) {
+      navigation.navigate(Routes.Otp, { mobile });
     }
+
+    setLoading(false);
   };
+
   const isValid = mobile.length === 10;
 
   return (
@@ -73,7 +59,6 @@ const LoginScreen = () => {
       style={styles.bg}
       resizeMode="cover"
     >
-      <ErrorBanner message={errorMsg} />
       <SafeAreaView style={styles.safe}>
         <KeyboardAwareScrollView
           contentContainerStyle={styles.scroll}
