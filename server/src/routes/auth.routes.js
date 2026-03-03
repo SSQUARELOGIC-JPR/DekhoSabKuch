@@ -11,4 +11,7 @@ router.post('/verify-otp', authController.verifyOtp);
 router.post('/save-role', authMiddleware, authController.saveRole);
 router.get('/me', authMiddleware, authController.getMe);
 
+router.post('/logout', authMiddleware, authController.logout);
+
+
 module.exports = router;

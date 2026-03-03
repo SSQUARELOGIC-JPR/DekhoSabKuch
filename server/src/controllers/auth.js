@@ -10,6 +10,7 @@ exports.sendOtp = async (req, res) => {
   try {
     const { mobile } = req.body;
 
+    // 🔎 Validation
     if (!mobile) {
       return res.status(400).json({
         success: false,
@@ -17,16 +18,24 @@ exports.sendOtp = async (req, res) => {
       });
     }
 
-    const otp = '1234'; // dummy OTP
+    if (!/^[0-9]{10}$/.test(mobile)) {
+      return res.status(400).json({
+        success: false,
+        message: messages.auth.invalidMobile,
+      });
+    }
+
+    const otp = '1234'; // dummy OTP (dev)
     otpStore.set(mobile, otp);
 
-    console.log(`OTP for ${mobile}: ${otp}`);
+    console.log(`📲 OTP for ${mobile}: ${otp}`);
 
     res.json({
       success: true,
       message: messages.auth.otpSent,
     });
   } catch (error) {
+    console.error('Send OTP Error:', error);
     res.status(500).json({
       success: false,
       message: messages.common.serverError,
@@ -46,23 +55,58 @@ exports.verifyOtp = async (req, res) => {
       });
     }
 
+    if (!/^[0-9]{10}$/.test(mobile)) {
+      return res.status(400).json({
+        success: false,
+        message: messages.auth.invalidMobile,
+      });
+    }
+
+    // 🔍 Check if user already exists (already verified before)
+    let user = await User.findOne({ mobile });
+
+    // 👉 If user exists but OTP expired → still allow login
     const storedOtp = otpStore.get(mobile);
 
-    if (!storedOtp || storedOtp !== otp) {
+    if (!storedOtp) {
+      if (user) {
+        const token = jwt.sign(
+          { userId: user._id },
+          process.env.JWT_SECRET,
+          { expiresIn: '30d' }
+        );
+
+        return res.json({
+          success: true,
+          message: messages.auth.loginSuccess,
+          token,
+          user,
+        });
+      }
+
       return res.status(400).json({
         success: false,
         message: messages.auth.invalidOtp,
       });
     }
 
+    // ❌ Wrong OTP
+    if (storedOtp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: messages.auth.invalidOtp,
+      });
+    }
+
+    // ✅ OTP correct → remove it
     otpStore.delete(mobile);
 
-    let user = await User.findOne({ mobile });
-
+    // 👤 Create user if not exists
     if (!user) {
       user = await User.create({ mobile });
     }
 
+    // 🔐 Generate Token
     const token = jwt.sign(
       { userId: user._id },
       process.env.JWT_SECRET,
@@ -76,6 +120,7 @@ exports.verifyOtp = async (req, res) => {
       user,
     });
   } catch (error) {
+    console.error('Verify OTP Error:', error);
     res.status(500).json({
       success: false,
       message: messages.common.serverError,
@@ -89,6 +134,15 @@ exports.saveRole = async (req, res) => {
     const userId = req.userId;
     const { role } = req.body;
 
+    const allowedRoles = ['customer', 'provider', 'both'];
+
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: messages.auth.invalidRole,
+      });
+    }
+
     const user = await User.findByIdAndUpdate(
       userId,
       { role },
@@ -101,6 +155,7 @@ exports.saveRole = async (req, res) => {
       user,
     });
   } catch (error) {
+    console.error('Save Role Error:', error);
     res.status(500).json({
       success: false,
       message: messages.common.serverError,
@@ -108,20 +163,95 @@ exports.saveRole = async (req, res) => {
   }
 };
 
+// 🙋 Get Logged-in User
 exports.getMe = async (req, res) => {
   try {
     const userId = req.userId;
 
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).lean();
+
+    console.log("TOKEN USER ID =>", req.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    const baseUrl = `${req.protocol}://${req.get('host')}/uploads`;
+
+    const data = {
+      _id: user._id,
+      mobile: user.mobile,
+      role: user.role,
+
+      // 🧍 Basic Info
+      name: user.name,
+      village: user.village,
+      tehsil: user.tehsil,
+      city: user.city,
+      state: user.state,
+      pincode: user.pincode,
+
+      // 🛠 Provider Info
+      category: user.category,
+      experience: user.experience,
+      about: user.about,
+      rating: user.rating,
+      servicesDone: user.servicesDone,
+      isAvailable: user.isAvailable,
+
+      // 📸 Images (full URL)
+      profileImage: user.profileImage
+        ? `${baseUrl}/${user.profileImage}`
+        : '',
+
+      // 🔒 Aadhaar (only if provider role)
+      aadharFrontImage:
+        user.role === 'provider' || user.role === 'both'
+          ? user.aadharFrontImage
+            ? `${baseUrl}/${user.aadharFrontImage}`
+            : ''
+          : '',
+      aadharBackImage:
+        user.role === 'provider' || user.role === 'both'
+          ? user.aadharBackImage
+            ? `${baseUrl}/${user.aadharBackImage}`
+            : ''
+          : '',
+
+      // 🔥 Flow Flags (important for frontend routing)
+      profileDone: user.profileDone,
+      paymentDone: user.paymentDone,
+      isUserProfileComplete: user.isUserProfileComplete,
+      isProviderProfileComplete: user.isProviderProfileComplete,
+    };
 
     res.json({
       success: true,
-      user,
+      user: data,
     });
   } catch (error) {
+    console.error('Get Me Error:', error);
     res.status(500).json({
       success: false,
-      message: messages.common.serverError,
+      message: 'Server error',
+    });
+  }
+};
+
+exports.logout = async (req, res) => {
+  try {
+    return res.status(200).json({
+      success: true,
+      message: 'Logout successful',
+    });
+  } catch (error) {
+    console.error('Logout Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Logout failed',
     });
   }
 };

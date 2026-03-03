@@ -19,6 +19,30 @@ export default {
     delete_account: 'अकाउंट डिलीट करें',
     confirm_logout: 'क्या आप वाकई लॉगआउट करना चाहते हैं?',
     confirm_delete: 'यह क्रिया वापस नहीं हो सकती!',
+    support_success_title: 'टिकट सबमिट हो गई',
+    support_success_subtitle:
+      'आपका सपोर्ट अनुरोध सफलतापूर्वक सबमिट हो गया है। हमारी टीम जल्द आपसे संपर्क करेगी।',
+    ok: 'ठीक है',
+    support_ticket_title: 'सपोर्ट टिकट',
+    ticket_type: 'टिकट प्रकार',
+    select_ticket_type: 'टिकट प्रकार चुनें',
+    summary: 'सारांश',
+    enter_summary: 'संक्षिप्त विवरण लिखें',
+    description: 'विवरण',
+    describe_issue: 'अपनी समस्या बताएं',
+    submit: 'सबमिट करें',
+
+    ticket_types: {
+      payment: 'पेमेंट समस्या',
+      bug: 'ऐप बग',
+      provider: 'प्रोवाइडर शिकायत',
+      general: 'सामान्य प्रश्न',
+    },
+    delete_title: 'खाता हटाएं',
+    delete_subtitle:
+      'खाता हटाने की पुष्टि के लिए अपना मोबाइल नंबर दर्ज करें। यह कार्रवाई वापस नहीं ली जा सकती।',
+    enter_phone: 'मोबाइल नंबर दर्ज करें',
+    delete: 'हटाएं',
   },
 
   tabs: {
@@ -52,6 +76,16 @@ export default {
     updateSuccessTitle: 'प्रोफाइल अपडेट हो गया',
     updateSuccessSubtitle: 'आपकी प्रोफाइल सफलतापूर्वक अपडेट हो गई है',
     ok: 'ठीक है',
+
+    personalInfo: 'व्यक्तिगत जानकारी',
+    addressDetails: 'पता संबंधी जानकारी',
+    professionalDetails: 'पेशेवर जानकारी',
+    mobileNumber: 'मोबाइल नंबर',
+    village: 'गाँव',
+    tehsil: 'तहसील',
+    category: 'सेवा श्रेणी (जैसे: इलेक्ट्रीशियन)',
+    experience: 'अनुभव (सालों में)',
+    aboutService: 'अपनी सेवा के बारे में लिखें',
   },
   categories: {
     electrician: 'इलेक्ट्रीशियन',
@@ -113,5 +147,16 @@ export default {
     card: 'क्रेडिट / डेबिट कार्ड',
     cod: 'बाद में भुगतान (स्वीकृति)',
     pay: 'भुगतान करें',
+    blockSubtitle: 'प्रोवाइडर एक्सेस करने के लिए कृपया पेमेंट पूरा करें'
+  },
+  errors: {
+    enterMobile: "कृपया मोबाइल नंबर दर्ज करें",
+    invalidMobil: "कृपया सही 10 अंकों का मोबाइल नंबर दर्ज करें",
+    otpFailed: "OTP भेजने में विफल",
+    invalidOtp: "गलत OTP, कृपया दोबारा प्रयास करें",
+    network: "नेटवर्क एरर, कृपया पुनः प्रयास करें",
+    sessionExpired: "सत्र समाप्त हो गया है। कृपया दोबारा लॉगिन करें।",
+    timeout: "अनुरोध में समय अधिक लग रहा है। कृपया पुनः प्रयास करें।",
+    noInternet: "इंटरनेट कनेक्शन उपलब्ध नहीं है।",
   }
 };

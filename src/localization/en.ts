@@ -19,6 +19,30 @@ export default {
     delete_account: 'Delete Account',
     confirm_logout: 'Are you sure you want to logout?',
     confirm_delete: 'This action cannot be undone!',
+    support_success_title: 'Ticket Submitted',
+    support_success_subtitle:
+      'Your support request has been submitted successfully. Our team will contact you soon.',
+    ok: 'OK',
+    support_ticket_title: 'Support Ticket',
+    ticket_type: 'Ticket Type',
+    select_ticket_type: 'Select ticket type',
+    summary: 'Summary',
+    enter_summary: 'Enter short summary',
+    description: 'Description',
+    describe_issue: 'Describe your issue',
+    submit: 'Submit',
+
+    ticket_types: {
+      payment: 'Payment Issue',
+      bug: 'App Bug',
+      provider: 'Provider Complaint',
+      general: 'General Query',
+    },
+    delete_title: 'Delete Account',
+    delete_subtitle:
+      'Enter your phone number to confirm account deletion. This action cannot be undone.',
+    enter_phone: 'Enter phone number',
+    delete: 'Delete',
   },
 
   tabs: {
@@ -52,6 +76,16 @@ export default {
     updateSuccessTitle: 'Profile Updated',
     updateSuccessSubtitle: 'Your profile has been updated successfully',
     ok: 'OK',
+
+    personalInfo: 'Personal Info',
+    addressDetails: 'Address Details',
+    professionalDetails: 'Professional Details',
+    mobileNumber: 'Mobile Number',
+    village: 'Village',
+    tehsil: 'Tehsil',
+    category: 'Service Category (e.g. Electrician)',
+    experience: 'Experience (years)',
+    aboutService: 'About your service',
   },
   categories: {
     electrician: 'Electrician',
@@ -113,5 +147,17 @@ export default {
     card: 'Credit / Debit Card',
     cod: 'Pay Later (Approval)',
     pay: 'Pay',
+    blockSubtitle: 'Please complete payment to access providers',
+
+  },
+  errors: {
+    enterMobile: "Please enter mobile number",
+    invalidMobile: "Please enter valid 10 digit mobile number",
+    otpFailed: "Failed to send OTP",
+    invalidOtp: "Invalid OTP. Please try again",
+    network: "Network error, please try again",
+    sessionExpired: "Session expired. Please login again.",
+    timeout: "Request timeout. Please try again.",
+    noInternet: "No internet connection.",
   }
 };

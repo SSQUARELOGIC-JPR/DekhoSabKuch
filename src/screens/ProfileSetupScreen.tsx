@@ -24,6 +24,8 @@ import { RootState } from '../store';
 import { updateProfileDone, updateUserProfile } from '../store/authSlice';
 import AccessBlockModal from '../components/AccessBlockModal';
 import { useTranslation } from '../localization/useTranslation';
+import { updateProfileApi } from '../services/api';
+import { ENV } from '../config/env';
 
 type RoleType = 'customer' | 'provider' | 'both';
 type DocType = 'profile' | 'aadharFront' | 'aadharBack';
@@ -36,14 +38,19 @@ const ProfileScreen = ({ navigation }: any) => {
   const t = useTranslation();
 
   const [profileImg, setProfileImg] = useState<string | null>(null);
-  const [aadharFront, setAadharFront] = useState<string | null>(null);
-  const [aadharBack, setAadharBack] = useState<string | null>(null);
+  const [aadharFrontImage, setAadharFrontImage] = useState<string | null>(null);
+  const [aadharBackImage, setAadharBackImage] = useState<string | null>(null);
+
+  const [category, setCategory] = useState('');
+  const [experience, setExperience] = useState('');
+  const [about, setAbout] = useState('');
 
   const [activeDoc, setActiveDoc] = useState<DocType>('profile');
   const [showPicker, setShowPicker] = useState(false);
 
   const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
+  const [village, setVillage] = useState('');
+  const [tehsil, setTehsil] = useState('');
   const [city, setCity] = useState('');
   const [stateVal, setStateVal] = useState('');
   const [pincode, setPincode] = useState('');
@@ -51,24 +58,39 @@ const ProfileScreen = ({ navigation }: any) => {
   const [isEdit, setIsEdit] = useState(!user?.profileDone);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // 🔥 SAFE IMAGE URI HANDLER
+  const getImageUri = (img?: string | null) => {
+    if (!img) return undefined;
+
+    if (img.startsWith('file') || img.startsWith('http')) {
+      return img;
+    }
+
+    return ENV.IMAGE_BASE_URL + 'uploads/' + img;
+  };
+
   useEffect(() => {
-    if (user?.profileDone) {
+    if (user) {
       setName(user.name ?? '');
-      setAddress(user.address ?? '');
+      setVillage(user.village ?? '');
+      setTehsil(user.tehsil ?? '');
       setCity(user.city ?? '');
       setStateVal(user.state ?? '');
       setPincode(user.pincode ?? '');
       setProfileImg(user.profileImage ?? null);
-      setAadharFront(user.aadharFront ?? null);
-      setAadharBack(user.aadharBack ?? null);
+      setAadharFrontImage(user.aadharFrontImage ?? null);
+      setAadharBackImage(user.aadharBackImage ?? null);
+      setCategory(user.category ?? '');
+      setExperience(user.experience ? String(user.experience) : '');
+      setAbout(user.about ?? '');
     }
   }, [user]);
 
   const handleImageSelect = (uri: string | null) => {
     if (!uri) return;
     if (activeDoc === 'profile') setProfileImg(uri);
-    if (activeDoc === 'aadharFront') setAadharFront(uri);
-    if (activeDoc === 'aadharBack') setAadharBack(uri);
+    if (activeDoc === 'aadharFront') setAadharFrontImage(uri);
+    if (activeDoc === 'aadharBack') setAadharBackImage(uri);
   };
 
   const openCamera = async () => {
@@ -89,35 +111,74 @@ const ProfileScreen = ({ navigation }: any) => {
 
   const isValid =
     name.trim().length > 0 &&
-    address.trim().length > 0 &&
     city.trim().length > 0 &&
     stateVal.trim().length > 0 &&
     pincode.length === 6 &&
-    (role === 'customer' || (aadharFront && aadharBack));
+    (role === 'customer' ||
+      (aadharFrontImage &&
+        aadharBackImage &&
+        category.trim().length > 0 &&
+        experience.trim().length > 0 &&
+        about.trim().length > 0));
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!isValid) return;
 
-    dispatch(
-      updateUserProfile({
-        name,
-        address,
-        city,
-        state: stateVal,
-        pincode,
-        profileImage: profileImg,
-        aadharFront,
-        aadharBack,
-      }),
-    );
+    try {
+      const formData = new FormData();
 
-    dispatch(updateProfileDone());
-    setIsEdit(false);
+      formData.append('role', role);
+      formData.append('name', name);
+      formData.append('village', village);
+      formData.append('tehsil', tehsil);
+      formData.append('city', city);
+      formData.append('state', stateVal);
+      formData.append('pincode', pincode);
+      formData.append('category', category);
+      formData.append('experience', String(experience));
+      formData.append('about', about);
 
-    if (!user?.paymentDone) {
-      navigation.navigate(Routes.Payment, { role });
-    } else {
-      setShowSuccess(true);
+      // 🔥 PROFILE IMAGE
+      if (profileImg && profileImg.startsWith('file')) {
+        formData.append('profileImage', {
+          uri: profileImg,
+          name: 'profile.jpg',
+          type: 'image/jpeg',
+        } as any);
+      }
+
+      // 🔥 AADHAR FRONT (only if new)
+      if (aadharFrontImage && aadharFrontImage.startsWith('file')) {
+        formData.append('aadharFrontImage', {
+          uri: aadharFrontImage,
+          name: 'aadharFront.jpg',
+          type: 'image/jpeg',
+        } as any);
+      }
+
+      // 🔥 AADHAR BACK (only if new)
+      if (aadharBackImage && aadharBackImage.startsWith('file')) {
+        formData.append('aadharBackImage', {
+          uri: aadharBackImage,
+          name: 'aadharBack.jpg',
+          type: 'image/jpeg',
+        } as any);
+      }
+
+      const res = await updateProfileApi(formData);
+
+      dispatch(updateUserProfile(res.data));
+      dispatch(updateProfileDone());
+
+      setIsEdit(false);
+
+      if (!res.data.paymentDone) {
+        navigation.navigate(Routes.Payment, { role });
+      } else {
+        setShowSuccess(true);
+      }
+    } catch (error) {
+      console.log('Profile update error:', error);
     }
   };
 
@@ -138,7 +199,7 @@ const ProfileScreen = ({ navigation }: any) => {
         setShowPicker(true);
       }}>
       {image ? (
-        <Image source={{ uri: image }} style={styles.docImg} />
+        <Image source={{ uri: getImageUri(image) }} style={styles.docImg} />
       ) : (
         <>
           <Icon name="upload" size={20} color={Colors.primary} />
@@ -150,18 +211,12 @@ const ProfileScreen = ({ navigation }: any) => {
 
   return (
     <View style={styles.root}>
-      {/* HEADER */}
       <View style={[styles.header, { paddingTop: insets.top + verticalScale(10) }]}>
         <Text style={styles.title}>{t.profile.profilePaggeTitle}</Text>
 
         {user?.profileDone && (
           <TouchableOpacity style={styles.editBtn} onPress={() => setIsEdit(!isEdit)}>
-            <Icon
-              name={isEdit ? 'x' : 'edit-2'}
-              size={moderateScale(14)}
-              color={Colors.white}
-              style={{ marginRight: moderateScale(4) }}
-            />
+            <Icon name={isEdit ? 'x' : 'edit-2'} size={14} color={Colors.white} />
             <Text style={styles.editText}>
               {isEdit ? t.common.cancel : t.profile.edit}
             </Text>
@@ -176,23 +231,37 @@ const ProfileScreen = ({ navigation }: any) => {
             setShowPicker(true);
           }}>
           {profileImg ? (
-            <Image source={{ uri: profileImg }} style={styles.headerAvatarImg} />
+            <Image
+              source={{ uri: getImageUri(profileImg) }}
+              style={styles.headerAvatarImg}
+            />
           ) : (
             <Icon name="camera" size={22} color={Colors.white} />
           )}
         </TouchableOpacity>
       </View>
 
-      {/* BODY */}
       <KeyboardAvoidingView
         style={styles.body}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          
           <View style={styles.card}>
+            <Text style={styles.sectionTitle}>{t.profile.personalInfo}</Text>
+
             <AppInput icon="user" placeholder={t.profile.name} value={name} onChangeText={setName} editable={isEdit} />
-            <AppInput icon="map-pin" placeholder={t.profile.address} value={address} onChangeText={setAddress} editable={isEdit} />
+
+            <AppInput
+              icon="phone"
+              placeholder="Mobile Number"
+              value={user?.mobile || ''}
+              editable={false}
+              onChangeText={() => { }}
+            />
+
+            <Text style={styles.sectionTitle}>{t.profile.addressDetails}</Text>
+
+            <AppInput icon="map" placeholder={t.profile.village} value={village} onChangeText={setVillage} editable={isEdit} />
+            <AppInput icon="map-pin" placeholder={t.profile.tehsil} value={tehsil} onChangeText={setTehsil} editable={isEdit} />
             <AppInput icon="home" placeholder={t.profile.city} value={city} onChangeText={setCity} editable={isEdit} />
             <AppInput icon="flag" placeholder={t.profile.state} value={stateVal} onChangeText={setStateVal} editable={isEdit} />
             <AppInput
@@ -207,18 +276,46 @@ const ProfileScreen = ({ navigation }: any) => {
 
             {(role === 'provider' || role === 'both') && (
               <>
+                <Text style={styles.sectionTitle}>{t.profile.professionalDetails}</Text>
+
+                <AppInput
+                  icon="tool"
+                  placeholder={t.profile.category}
+                  value={category}
+                  onChangeText={setCategory}
+                  editable={isEdit}
+                />
+
+                <AppInput
+                  icon="award"
+                  placeholder={t.profile.experience}
+                  value={experience}
+                  onChangeText={(v) => setExperience(v.replace(/[^0-9]/g, ''))}
+                  keyboardType="number-pad"
+                  editable={isEdit}
+                />
+
+                <AppInput
+                  icon="file-text"
+                  placeholder={t.profile.aboutService}
+                  value={about}
+                  onChangeText={setAbout}
+                  editable={isEdit}
+                  multiline
+                  numberOfLines={4}
+                  inputStyle={styles.textArea}
+                />
+
                 <Text style={styles.docTitle}>{t.profile.uploadId}</Text>
                 <View style={styles.row}>
-                  <UploadBox label={t.common.front} image={aadharFront} docType="aadharFront" />
-                  <UploadBox label={t.common.back} image={aadharBack} docType="aadharBack" />
+                  <UploadBox label={t.common.front} image={aadharFrontImage} docType="aadharFront" />
+                  <UploadBox label={t.common.back} image={aadharBackImage} docType="aadharBack" />
                 </View>
               </>
             )}
           </View>
-
         </ScrollView>
 
-        {/* Bottom Button */}
         <View style={styles.bottomBtnWrap}>
           {isEdit && (
             <TouchableOpacity
@@ -234,7 +331,6 @@ const ProfileScreen = ({ navigation }: any) => {
             </TouchableOpacity>
           )}
         </View>
-
       </KeyboardAvoidingView>
 
       <ImagePickerModal
@@ -250,7 +346,6 @@ const ProfileScreen = ({ navigation }: any) => {
         }}
       />
 
-      {/* SUCCESS MODAL */}
       <AccessBlockModal
         visible={showSuccess}
         title={t.profile.updateSuccessTitle}
@@ -259,7 +354,13 @@ const ProfileScreen = ({ navigation }: any) => {
         okText={t.profile.ok}
         showLater={false}
         onClose={() => setShowSuccess(false)}
-        onOk={() => setShowSuccess(false)}
+        onOk={() => {
+          setShowSuccess(false);
+          navigation.reset({
+            index: 0,
+            routes: [{ name: Routes.BottomTabs }],
+          });
+        }}
       />
     </View>
   );
@@ -269,7 +370,6 @@ export default ProfileScreen;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.backgroundAlt },
-
   header: {
     backgroundColor: Colors.primary,
     paddingHorizontal: moderateScale(16),
@@ -278,7 +378,6 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: moderateScale(24),
     alignItems: 'center',
   },
-
   editBtn: {
     position: 'absolute',
     right: moderateScale(16),
@@ -290,13 +389,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-
   editText: {
     color: Colors.white,
     fontSize: moderateScale(13),
     fontWeight: '600',
   },
-
   headerAvatar: {
     height: moderateScale(70),
     width: moderateScale(70),
@@ -308,26 +405,21 @@ const styles = StyleSheet.create({
     marginTop: verticalScale(10),
     backgroundColor: Colors.primary,
   },
-
   headerAvatarImg: {
     height: '100%',
     width: '100%',
     borderRadius: moderateScale(35),
   },
-
   title: {
     color: Colors.white,
     fontSize: moderateScale(20),
     fontWeight: '700',
   },
-
   body: { flex: 1, paddingHorizontal: moderateScale(16) },
-
   scrollContent: {
     paddingTop: verticalScale(20),
     paddingBottom: verticalScale(10),
   },
-
   card: {
     backgroundColor: Colors.white,
     borderRadius: moderateScale(12),
@@ -337,15 +429,19 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     gap: 8,
   },
-
+  sectionTitle: {
+    fontSize: moderateScale(15),
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    marginTop: verticalScale(10),
+    marginBottom: verticalScale(4),
+  },
   docTitle: {
     fontSize: moderateScale(16),
     fontWeight: '600',
     color: Colors.textPrimary,
   },
-
   row: { flexDirection: 'row', gap: moderateScale(12) },
-
   uploadBox: {
     flex: 1,
     height: moderateScale(90),
@@ -356,24 +452,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.lightWhite,
   },
-
   uploadText: {
     color: Colors.textSecondary,
     marginTop: verticalScale(6),
     fontSize: moderateScale(13),
   },
-
   docImg: {
     height: '100%',
     width: '100%',
     borderRadius: moderateScale(12),
   },
-
   bottomBtnWrap: {
     paddingTop: verticalScale(6),
     paddingBottom: verticalScale(4),
   },
-
   ctaButton: {
     height: verticalScale(36),
     borderRadius: moderateScale(8),
@@ -382,13 +474,16 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: moderateScale(24),
   },
-
   ctaActive: { backgroundColor: Colors.accent },
   ctaDisabled: { backgroundColor: Colors.lightGray },
-
   ctaText: {
     fontSize: moderateScale(15),
     fontWeight: '600',
     color: Colors.white,
+  },
+  textArea: {
+    minHeight: verticalScale(90),
+    textAlignVertical: 'top',
+    paddingTop: verticalScale(0),
   },
 });

@@ -6,6 +6,7 @@ import {
   ImageBackground,
   TextInput,
   TouchableOpacity,
+  Vibration,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
@@ -18,6 +19,8 @@ import { AppButton } from '../components/AppButton';
 import { Routes } from '../constants/routes';
 import AppHeaderLogo from '../components/AppHeaderLogo';
 import { useTranslation } from '../localization/useTranslation';
+import ErrorBanner from '../components/ErrorBanner';
+import { verifyOtpApi, sendOtpApi } from '../services/api';
 
 const OtpScreen = ({ navigation, route }: any) => {
   const { mobile } = route.params || {};
@@ -25,6 +28,8 @@ const OtpScreen = ({ navigation, route }: any) => {
 
   const [otp, setOtp] = useState(['', '', '', '']);
   const [timer, setTimer] = useState(30);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const inputs = useRef<Array<TextInput | null>>([]);
 
   // Countdown Timer
@@ -39,31 +44,83 @@ const OtpScreen = ({ navigation, route }: any) => {
   }, [timer]);
 
   const handleChange = (text: string, index: number) => {
+    const cleaned = text.replace(/[^0-9]/g, '');
+
     const newOtp = [...otp];
-    newOtp[index] = text.replace(/[^0-9]/g, '');
+    newOtp[index] = cleaned;
     setOtp(newOtp);
 
-    if (text && index < 3) {
+    if (cleaned && index < otp.length - 1) {
       inputs.current[index + 1]?.focus();
     }
   };
 
   const handleBackspace = (index: number) => {
-    if (index > 0 && !otp[index]) {
+    const newOtp = [...otp];
+
+    if (otp[index]) {
+      // If current has value → clear it
+      newOtp[index] = '';
+      setOtp(newOtp);
+    } else if (index > 0) {
+      // If already empty → go back & clear previous
       inputs.current[index - 1]?.focus();
+      newOtp[index - 1] = '';
+      setOtp(newOtp);
     }
   };
 
-  const handleVerify = () => {
+  // 🔐 VERIFY OTP
+  const handleVerify = async () => {
     const finalOtp = otp.join('');
-    console.log('OTP:', finalOtp);
-    navigation.navigate(Routes.RoleSelection, { mobile });
+
+    if (finalOtp.length !== 4) return;
+
+    try {
+      setLoading(true);
+      setErrorMsg('');
+
+      const res = await verifyOtpApi(mobile, finalOtp);
+
+      console.log('🔐 VERIFY OTP RES:', res);
+
+      if (res?.success) {
+        Vibration.vibrate(100);
+
+        // 👉 token + user params me pass
+        navigation.navigate(Routes.RoleSelection, {
+          mobile,
+          token: res.token,
+          user: res.user,
+        });
+      } else {
+        Vibration.vibrate([0, 200, 100, 200]);
+        setErrorMsg(res?.message || t.errors.invalidOtp);
+      }
+    } catch (error: any) {
+      console.log('❌ VERIFY OTP ERROR:', error);
+      Vibration.vibrate([0, 200, 100, 200]);
+      setErrorMsg(
+        error?.response?.data?.message || t.errors.network
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleResend = () => {
-    setTimer(30);
-    setOtp(['', '', '', '']);
-    inputs.current[0]?.focus();
+  // 🔁 RESEND OTP
+  const handleResend = async () => {
+    try {
+      setTimer(30);
+      setOtp(['', '', '', '']);
+      inputs.current[0]?.focus();
+
+      await sendOtpApi(mobile);
+      Vibration.vibrate(100);
+    } catch (error) {
+      Vibration.vibrate([0, 200, 100, 200]);
+      setErrorMsg(t.errors.network);
+    }
   };
 
   const isValid = otp.every(d => d !== '');
@@ -71,6 +128,9 @@ const OtpScreen = ({ navigation, route }: any) => {
   return (
     <ImageBackground source={Images.splashBg} style={styles.bg} resizeMode="cover">
       <SafeAreaView style={styles.safe}>
+        {/* 🔴 Top Error Banner */}
+        <ErrorBanner message={errorMsg} />
+
         <KeyboardAwareScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
@@ -78,12 +138,10 @@ const OtpScreen = ({ navigation, route }: any) => {
           extraScrollHeight={30}
         >
           <View style={styles.container}>
-            {/* Top Logo */}
             <AppHeaderLogo />
 
             <View style={{ flex: 1 }} />
 
-            {/* OTP Section */}
             <View style={styles.bottom}>
               <Text style={styles.heading}>{t.otp.enterOtp}</Text>
 
@@ -111,7 +169,8 @@ const OtpScreen = ({ navigation, route }: any) => {
               <AppButton
                 title={t.otp.verifyOtp}
                 onPress={handleVerify}
-                disabled={!isValid}
+                loading={loading}
+                disabled={!isValid || loading}
               />
 
               <View style={styles.resendContainer}>
@@ -136,7 +195,6 @@ const OtpScreen = ({ navigation, route }: any) => {
 };
 
 export default OtpScreen;
-
 const styles = StyleSheet.create({
   bg: { flex: 1 },
 

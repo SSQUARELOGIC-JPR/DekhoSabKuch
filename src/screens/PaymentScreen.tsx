@@ -14,10 +14,11 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import { Colors } from '../theme/colors';
 import { RootState } from '../store';
-import { updatePaymentDone } from '../store/authSlice';
+import { updateUserProfile } from '../store/authSlice';
 import { Routes } from '../constants/routes';
 import { ScreenProps, RoleType } from '../types/interfaces';
 import { useTranslation } from '../localization/useTranslation';
+import { makePaymentApi } from '../services/api';
 
 type PaymentMethod = 'upi' | 'card' | 'cod';
 
@@ -31,18 +32,40 @@ const PaymentScreen: React.FC<ScreenProps> = ({ navigation }) => {
 
   const [method, setMethod] = useState<PaymentMethod | null>(null);
 
+  // ₹15 for customer, ₹50 for provider/both
   const amount = useMemo(() => {
     if (role === 'customer') return 15;
     return 50;
   }, [role]);
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     if (!method) return;
-    dispatch(updatePaymentDone());
-    navigation.reset({
-      index: 0,
-      routes: [{ name: Routes.BottomTabs }],
-    });
+
+    try {
+      // Simulate gateway success (replace later with Razorpay etc.)
+      const paymentSuccess = true;
+      if (!paymentSuccess) return;
+
+      // Call backend controller (amount required)
+      const res = await makePaymentApi(amount);
+
+      // Controller returns only flags, not full user object
+      const updatedUser = {
+        ...user,
+        paymentDone: res.data.paymentDone,
+      };
+
+      // Update redux
+      dispatch(updateUserProfile(updatedUser));
+
+      // Navigate to Home
+      navigation.reset({
+        index: 0,
+        routes: [{ name: Routes.BottomTabs }],
+      });
+    } catch (error: any) {
+      console.log('Payment error:', error?.response?.data || error);
+    }
   };
 
   const PaymentOption = ({
@@ -79,7 +102,6 @@ const PaymentScreen: React.FC<ScreenProps> = ({ navigation }) => {
     <View style={styles.root}>
       {/* HEADER */}
       <View style={[styles.header, { paddingTop: insets.top + verticalScale(10) }]}>
-        {/* Back Button */}
         <TouchableOpacity
           style={[styles.backBtn, { top: insets.top + 6 }]}
           onPress={() => navigation.goBack()}>
@@ -98,11 +120,8 @@ const PaymentScreen: React.FC<ScreenProps> = ({ navigation }) => {
         style={styles.body}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 
-        {/* CONTENT */}
         <View style={styles.content}>
-          <Text style={styles.subtitle}>
-            {t.payment.subtitle}
-          </Text>
+          <Text style={styles.subtitle}>{t.payment.subtitle}</Text>
 
           <View style={styles.card}>
             <Text style={styles.amountLabel}>{t.payment.totalAmount}</Text>
@@ -116,7 +135,7 @@ const PaymentScreen: React.FC<ScreenProps> = ({ navigation }) => {
           </View>
         </View>
 
-        {/* BUTTON */}
+        {/* PAY BUTTON */}
         <View style={[styles.bottomBtnWrap, { paddingBottom: insets.bottom + 8 }]}>
           <TouchableOpacity
             style={[

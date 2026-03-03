@@ -23,6 +23,7 @@ import {
   RoleType,
   RoleCardProps,
   RoleSelectionScreenProps,
+  AuthUser,
 } from '../types/interfaces';
 import { useTranslation } from '../localization/useTranslation';
 
@@ -32,19 +33,27 @@ const RoleSelectionScreen = ({ route }: RoleSelectionScreenProps) => {
   const navigation = useNavigation<any>();
   const t = useTranslation();
 
+  const mobile = route?.params?.mobile ?? '';
+  const token = route?.params?.token ?? '';
+  const userFromApi = route?.params?.user;
+
   const handleContinue = () => {
-    if (!role) return;
+    if (!role || !mobile || !token || !userFromApi) return;
 
-    const mobile = route?.params?.mobile || '';
-
-    const userData = {
+    const userData: AuthUser = {
+      ...userFromApi,
       mobile,
       role,
       profileDone: false,
       paymentDone: false,
     };
 
-    dispatch(loginSuccess(userData));
+    dispatch(
+      loginSuccess({
+        user: userData,
+        token,
+      })
+    );
   };
 
   const RoleCard = ({

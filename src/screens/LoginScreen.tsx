@@ -3,6 +3,7 @@ import {
   View,
   StyleSheet,
   ImageBackground,
+  Vibration
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
@@ -18,13 +19,17 @@ import { AppInput } from '../components/AppInput';
 import { AppButton } from '../components/AppButton';
 import AppHeaderLogo from '../components/AppHeaderLogo';
 import { useTranslation } from '../localization/useTranslation';
-import { sendOtpApi } from '../services/auth.api';
+import { sendOtpApi } from '../services/api';
+import ErrorBanner from '../components/ErrorBanner';
+
+
 const LoginScreen = () => {
   const navigation = useNavigation<any>();
   const t = useTranslation();
 
   const [mobile, setMobile] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   // Only allow numbers
   const handleChange = (text: string) => {
@@ -38,16 +43,28 @@ const LoginScreen = () => {
 
     try {
       setLoading(true);
-      const res = await sendOtpApi(mobile);
-      console.log('API Response:', res); 
+      setErrorMsg('');
 
-      navigation.navigate(Routes.Otp, { mobile });
-    } catch (error) {
+      const res = await sendOtpApi(mobile);
+
+      console.log("df");
+
+      if (res?.success) {
+        navigation.navigate(Routes.Otp, { mobile });
+      } else {
+        Vibration.vibrate([0, 200, 100, 200]);
+        setErrorMsg(res?.message || t.errors.otpFailed);
+      }
+
+    } catch (error: any) {
+      Vibration.vibrate([0, 200, 100, 200]);
+      setErrorMsg(
+        error?.response?.data?.message || t.errors.network
+      );
+    } finally {
       setLoading(false);
-      console.log('Send OTP Error:', error);
     }
   };
-
   const isValid = mobile.length === 10;
 
   return (
@@ -56,6 +73,7 @@ const LoginScreen = () => {
       style={styles.bg}
       resizeMode="cover"
     >
+      <ErrorBanner message={errorMsg} />
       <SafeAreaView style={styles.safe}>
         <KeyboardAwareScrollView
           contentContainerStyle={styles.scroll}

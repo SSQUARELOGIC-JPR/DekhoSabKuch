@@ -9,26 +9,38 @@ export interface FileAsset {
   type: string; // image / pdf
 }
 
-// ---------- USER PROFILE ----------
 export interface UserProfile {
-  profileImage?: string;
+  profileImage?: string | null;
   name: string;
-  address: string;
+  village: string;
+  tehsil: string;
   city: string;
   state: string;
   pincode: string;
+
   role: Exclude<RoleType, null>;
-  aadharFront?: string;
-  aadharBack?: string;
-  verificationFile?: FileAsset;
+
+  // Aadhaar (provider / both)
+  aadharFrontImage?: string | null;
+  aadharBackImage?: string | null;
+
+  // 🔥 NEW (Provider fields)
+  category?: string;
+  experience?: number;
+  about?: string;
 }
 
 // ---------- AUTH USER ----------
 export interface AuthUser extends Partial<UserProfile> {
   mobile: string;
   role: Exclude<RoleType, null>;
+
   profileDone: boolean;
   paymentDone: boolean;
+
+  // granular backend flags
+  isUserProfileComplete?: boolean;
+  isProviderProfileComplete?: boolean;
 }
 
 // ---------- COMPONENTS ----------
@@ -36,14 +48,19 @@ export interface AppInputProps {
   placeholder: string;
   icon: string;
   value: string;
-  onChangeText: (text: string) => void;
-  keyboardType?: TextInputProps['keyboardType'];
+  onChangeText?: (text: string) => void;
+  keyboardType?: any;
   secureTextEntry?: boolean;
   maxLength?: number;
   editable?: boolean;
   autoFocus?: boolean;
-  autoCapitalize?: TextInputProps['autoCapitalize'];
-  returnKeyType?: TextInputProps['returnKeyType'];
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  returnKeyType?: 'done' | 'next' | 'go' | 'search' | 'send';
+
+  // 🔥 NEW
+  multiline?: boolean;
+  numberOfLines?: number;
+  inputStyle?: any;
 }
 
 export interface AppButtonProps {
@@ -69,12 +86,13 @@ export interface CategoryListProps {
 }
 // ---------- HOME ----------
 export interface Provider {
-  id: string;
+  _id: string;
   name: string;
   category: string;
   rating: number;
   city: string;
   phone: string;
+  profileImage: string;
 }
 
 export interface ProviderListProps {
@@ -111,6 +129,8 @@ export interface RoleSelectionScreenProps {
   route: {
     params?: {
       mobile?: string;
+      token?: string;       
+      user?: AuthUser;
     };
   };
 }
@@ -120,4 +140,37 @@ export interface ImagePickerModalProps {
   onClose: () => void;
   onCamera: () => void;
   onGallery: () => void;
+}
+
+// ---------- ERROR BANNER ----------
+export type BannerType = 'error' | 'success' | 'warning';
+
+export interface ErrorBannerProps {
+  message: string;
+  type?: BannerType;
+  duration?: number;
+}
+
+// ---------- SUPPORT TICKET MODAL ----------
+export interface SupportTicketModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onSubmit: (data: {
+    type: string;
+    summary: string;
+    description: string;
+  }) => void | Promise<void>;
+  loading?: boolean;
+}
+// ---------- DELETE ACCOUNT MODAL ----------
+export interface DeleteAccountModalProps {
+  visible: boolean;
+  phone: string;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+// ---------- GLOBAL ERROR STATE ----------
+export interface GlobalErrorState {
+  message: string;
+  type: BannerType;
 }

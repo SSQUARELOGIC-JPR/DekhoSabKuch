@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-    View,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    ScrollView,
-    Linking,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Linking,
+  Image,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
@@ -16,280 +18,341 @@ import { Typography } from '../theme/typography';
 import { ScreenProps } from '../types/interfaces';
 import { useTranslation } from '../localization/useTranslation';
 import { translateDynamic } from '../localization/translateDynamic';
+import { getProviderByIdApi } from '../services/api';
+import { ENV } from '../config/env';
 
 const ProviderDetailsScreen: React.FC<ScreenProps> = ({ navigation, route }) => {
-    const insets = useSafeAreaInsets();
-    const provider = route?.params?.provider;
-    const t = useTranslation();
+  const insets = useSafeAreaInsets();
+  const t = useTranslation();
 
-    const handleCall = () => {
-        Linking.openURL(`tel:${provider.phone}`);
-    };
+  const initialProvider = route?.params?.provider;
+  const providerId = route?.params?.providerId || initialProvider?._id;
 
-    const handleWhatsApp = () => {
-        const url = `whatsapp://send?phone=91${provider.phone}`;
-        Linking.openURL(url).catch(() => {
-            Linking.openURL(`https://wa.me/91${provider.phone}`);
-        });
-    };
+  const [provider, setProvider] = useState<any>(initialProvider || null);
+  const [loading, setLoading] = useState(!initialProvider);
 
+  // 🔥 SAFE IMAGE HANDLER
+  const getImageUri = (img?: string) => {
+    if (!img) return undefined;
+    if (img.startsWith('http') || img.startsWith('file')) return img;
+    return ENV.IMAGE_BASE_URL + 'uploads/' + img;
+  };
+
+  useEffect(() => {
+    if (!initialProvider && providerId) {
+      fetchProvider();
+    }
+  }, []);
+
+  const fetchProvider = async () => {
+    try {
+      const res = await getProviderByIdApi(providerId);
+      setProvider(res.provider);
+    } catch (error) {
+      console.log('Provider detail error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCall = () => {
+    if (!provider?.mobile) return;
+    Linking.openURL(`tel:${provider.mobile}`);
+  };
+
+  const handleWhatsApp = () => {
+    if (!provider?.mobile) return;
+    const url = `whatsapp://send?phone=91${provider.mobile}`;
+    Linking.openURL(url).catch(() => {
+      Linking.openURL(`https://wa.me/91${provider.mobile}`);
+    });
+  };
+
+  if (loading) {
     return (
-        <View style={styles.root}>
-            {/* HEADER */}
-            <View style={[styles.header, { paddingTop: insets.top + verticalScale(8) }]}>
-
-                {/* Back Button */}
-                <TouchableOpacity
-                    style={[styles.backBtn, { top: insets.top + 6 }]}
-                    onPress={() => navigation.goBack()}>
-                    <Icon name="arrow-left" size={22} color={Colors.white} />
-                </TouchableOpacity>
-
-                <View style={styles.avatar}>
-                    <Icon name="user" size={40} color={Colors.white} />
-                </View>
-
-                <Text style={styles.name}>{provider.name}</Text>
-                <Text style={styles.role}>
-                    {translateDynamic(provider.category, t.categories)}
-                </Text>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false}>
-                {/* INFO CARD */}
-                <View style={styles.infoCard}>
-                    {/* Location */}
-                    <View style={styles.infoRow}>
-                        <Icon name="map-pin" size={18} color={Colors.primary} />
-                        <Text style={styles.infoText}>
-                            {t.providerDetails.location}: {provider.city}, Rajasthan, India
-                        </Text>
-                    </View>
-
-                    {/* Rating */}
-                    <View style={styles.infoRow}>
-                        <Icon name="star" size={18} color="#FFC107" />
-                        <Text style={[styles.infoText, { color: '#FFC107', fontWeight: '700' }]}>
-                            {provider.rating} ⭐
-                        </Text>
-                    </View>
-
-                    {/* Distance */}
-                    <View style={styles.infoRow}>
-                        <Icon name="navigation" size={18} color={Colors.primary} />
-                        <Text style={styles.infoText}>
-                            {t.providerDetails.distance}: 2.5 km away
-                        </Text>
-                    </View>
-                </View>
-
-                {/* STATS CARD */}
-                <View style={styles.statsCard}>
-                    <View style={styles.statBox}>
-                        <Text style={styles.statNumber}>{provider.experience || 5}+</Text>
-                        <Text style={styles.statLabel}>
-                            {t.providerDetails.experience}
-                        </Text>
-                    </View>
-
-                    <View style={styles.statBox}>
-                        <Text style={styles.statNumber}>{provider.jobs || 120}+</Text>
-                        <Text style={styles.statLabel}>
-                            {t.providerDetails.servicesDone}
-                        </Text>
-                    </View>
-
-                    <View style={styles.statBox}>
-                        <Text style={styles.statNumber}>{provider.rating}</Text>
-                        <Text style={styles.statLabel}>
-                            {t.providerDetails.rating}
-                        </Text>
-                    </View>
-                </View>
-
-                {/* ABOUT */}
-                <View style={styles.card}>
-                    <Text style={styles.cardTitle}>
-                        {t.providerDetails.about}
-                    </Text>
-                    <Text style={styles.cardDesc}>
-                        {provider.name} {t.providerDetails.aboutDesc1}{' '}
-                        {translateDynamic(provider.category, t.categories)} {t.providerDetails.aboutDesc2}{' '}
-                        {provider.experience || 5} {t.providerDetails.yearsExperience}{' '}
-                        {provider.jobs || 120}+ {t.providerDetails.servicesCompleted}
-                    </Text>
-                </View>
-
-                {/* ACTION BUTTONS */}
-                <View style={styles.actionsRow}>
-                    <TouchableOpacity style={styles.callBtn} onPress={handleCall}>
-                        <Icon name="phone" size={18} color={Colors.white} />
-                        <Text style={styles.btnText}>
-                            {t.providerDetails.call}
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.whatsappBtn} onPress={handleWhatsApp}>
-                        <Icon name="message-circle" size={18} color={Colors.white} />
-                        <Text style={styles.btnText}>
-                            {t.providerDetails.whatsapp}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-            </ScrollView>
-        </View>
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
     );
+  }
+
+  if (!provider) {
+    return (
+      <View style={styles.loader}>
+        <Text style={{ color: Colors.textPrimary }}>
+          Provider not available
+        </Text>
+      </View>
+    );
+  }
+
+  const fullAddress = [
+    provider.village,
+    provider.tehsil,
+    provider.city,
+    provider.state,
+    provider.pincode,
+  ]
+    .filter(Boolean)
+    .join(', ');
+
+  return (
+    <View style={styles.root}>
+      {/* HEADER */}
+      <View style={[styles.header, { paddingTop: insets.top + verticalScale(8) }]}>
+        <TouchableOpacity
+          style={[styles.backBtn, { top: insets.top + 6 }]}
+          onPress={() => navigation.goBack()}>
+          <Icon name="arrow-left" size={22} color={Colors.white} />
+        </TouchableOpacity>
+
+        <View style={styles.avatar}>
+          {provider.profileImage ? (
+            <Image
+              source={{ uri: getImageUri(provider.profileImage) }}
+              style={styles.avatarImg}
+            />
+          ) : (
+            <Icon name="user" size={40} color={Colors.white} />
+          )}
+        </View>
+
+        <Text style={styles.name}>{provider.name}</Text>
+        <Text style={styles.role}>
+          {translateDynamic(provider.category, t.categories)}
+        </Text>
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* INFO CARD */}
+        <View style={styles.infoCard}>
+          <View style={styles.infoRow}>
+            <Icon name="map-pin" size={18} color={Colors.primary} />
+            <Text style={styles.infoText}>
+              {t.providerDetails.location}: {fullAddress || '-'}
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Icon name="star" size={18} color="#FFC107" />
+            <Text style={[styles.infoText, { color: '#FFC107', fontWeight: '700' }]}>
+              {provider.rating || 0} ⭐
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Icon name="briefcase" size={18} color={Colors.primary} />
+            <Text style={styles.infoText}>
+              {t.providerDetails.servicesDone}: {provider.servicesDone || 0}+
+            </Text>
+          </View>
+        </View>
+
+        {/* STATS */}
+        <View style={styles.statsCard}>
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>{provider.experience || 0}+</Text>
+            <Text style={styles.statLabel}>{t.providerDetails.experience}</Text>
+          </View>
+
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>{provider.servicesDone || 0}+</Text>
+            <Text style={styles.statLabel}>{t.providerDetails.servicesDone}</Text>
+          </View>
+
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>{provider.rating || 0}</Text>
+            <Text style={styles.statLabel}>{t.providerDetails.rating}</Text>
+          </View>
+        </View>
+
+        {/* ABOUT */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{t.providerDetails.about}</Text>
+          <Text style={styles.cardDesc}>
+            {provider.about || '-'}
+          </Text>
+        </View>
+
+        {/* ACTION BUTTONS */}
+        <View style={styles.actionsRow}>
+          <TouchableOpacity style={styles.callBtn} onPress={handleCall}>
+            <Icon name="phone" size={18} color={Colors.white} />
+            <Text style={styles.btnText}>{t.providerDetails.call}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.whatsappBtn} onPress={handleWhatsApp}>
+            <Icon name="message-circle" size={18} color={Colors.white} />
+            <Text style={styles.btnText}>{t.providerDetails.whatsapp}</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </View>
+  );
 };
 
 export default ProviderDetailsScreen;
 
 const styles = StyleSheet.create({
-    root: {
-        flex: 1,
-        backgroundColor: Colors.backgroundAlt,
-    },
+  root: {
+    flex: 1,
+    backgroundColor: Colors.backgroundAlt,
+  },
 
-    header: {
-        backgroundColor: Colors.primary,
-        alignItems: 'center',
-        paddingBottom: verticalScale(26),
-        borderBottomLeftRadius: moderateScale(26),
-        borderBottomRightRadius: moderateScale(26),
-    },
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 
-    avatar: {
-        height: moderateScale(110),
-        width: moderateScale(110),
-        borderRadius: moderateScale(55),
-        backgroundColor: Colors.primaryCard,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: verticalScale(10),
-        elevation: 6,
-    },
+  header: {
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    paddingBottom: verticalScale(26),
+    borderBottomLeftRadius: moderateScale(26),
+    borderBottomRightRadius: moderateScale(26),
+  },
 
-    name: {
-        ...Typography.title,
-        color: Colors.white,
-    },
+  avatar: {
+    height: moderateScale(110),
+    width: moderateScale(110),
+    borderRadius: moderateScale(55),
+    backgroundColor: Colors.primaryCard,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: verticalScale(10),
+    elevation: 6,
+    overflow: 'hidden',
+  },
 
-    role: {
-        ...Typography.subtitle,
-        color: Colors.primarySoft2,
-    },
+  avatarImg: {
+    height: '100%',
+    width: '100%',
+  },
 
-    infoCard: {
-        backgroundColor: Colors.white,
-        margin: moderateScale(14),
-        borderRadius: moderateScale(16),
-        padding: moderateScale(16),
-        elevation: 3,
-    },
+  name: {
+    ...Typography.title,
+    color: Colors.white,
+  },
 
-    infoRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: verticalScale(10),
-        gap: moderateScale(8),
-    },
+  role: {
+    ...Typography.subtitle,
+    color: Colors.primarySoft2,
+  },
 
-    infoText: {
-        ...Typography.small,
-        color: Colors.textPrimary,
-        flex: 1,
-    },
+  infoCard: {
+    backgroundColor: Colors.white,
+    margin: moderateScale(14),
+    borderRadius: moderateScale(16),
+    padding: moderateScale(16),
+    elevation: 3,
+  },
 
-    statsCard: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginHorizontal: moderateScale(14),
-        marginBottom: verticalScale(10),
-        backgroundColor: Colors.white,
-        borderRadius: moderateScale(16),
-        paddingVertical: verticalScale(16),
-        elevation: 3,
-    },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: verticalScale(10),
+    gap: moderateScale(8),
+  },
 
-    statBox: {
-        alignItems: 'center',
-        flex: 1,
-    },
+  infoText: {
+    ...Typography.small,
+    color: Colors.textPrimary,
+    flex: 1,
+  },
 
-    statNumber: {
-        fontSize: moderateScale(18),
-        fontWeight: '700',
-        color: Colors.primary,
-    },
+  statsCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginHorizontal: moderateScale(14),
+    marginBottom: verticalScale(10),
+    backgroundColor: Colors.white,
+    borderRadius: moderateScale(16),
+    paddingVertical: verticalScale(16),
+    elevation: 3,
+  },
 
-    statLabel: {
-        ...Typography.small,
-        color: Colors.textSecondary,
-        marginTop: verticalScale(2),
-    },
+  statBox: {
+    alignItems: 'center',
+    flex: 1,
+  },
 
-    card: {
-        backgroundColor: Colors.white,
-        marginHorizontal: moderateScale(14),
-        borderRadius: moderateScale(16),
-        padding: moderateScale(16),
-        elevation: 3,
-    },
+  statNumber: {
+    fontSize: moderateScale(18),
+    fontWeight: '700',
+    color: Colors.primary,
+  },
 
-    cardTitle: {
-        ...Typography.subtitle,
-        fontWeight: '700',
-        color: Colors.textPrimary,
-        marginBottom: verticalScale(6),
-    },
+  statLabel: {
+    ...Typography.small,
+    color: Colors.textSecondary,
+    marginTop: verticalScale(2),
+  },
 
-    cardDesc: {
-        ...Typography.small,
-        color: Colors.textSecondary,
-        lineHeight: moderateScale(18),
-    },
+  card: {
+    backgroundColor: Colors.white,
+    marginHorizontal: moderateScale(14),
+    borderRadius: moderateScale(16),
+    padding: moderateScale(16),
+    elevation: 3,
+  },
 
-    actionsRow: {
-        flexDirection: 'row',
-        gap: moderateScale(12),
-        margin: moderateScale(14),
-    },
+  cardTitle: {
+    ...Typography.subtitle,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    marginBottom: verticalScale(6),
+  },
 
-    callBtn: {
-        flex: 1,
-        backgroundColor: Colors.primary,
-        borderRadius: moderateScale(12),
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingVertical: verticalScale(12),
-        gap: moderateScale(6),
-    },
+  cardDesc: {
+    ...Typography.small,
+    color: Colors.textSecondary,
+    lineHeight: moderateScale(18),
+  },
 
-    whatsappBtn: {
-        flex: 1,
-        backgroundColor: '#25D366',
-        borderRadius: moderateScale(12),
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingVertical: verticalScale(12),
-        gap: moderateScale(6),
-    },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: moderateScale(12),
+    margin: moderateScale(14),
+  },
 
-    btnText: {
-        color: Colors.white,
-        fontWeight: '600',
-        fontSize: moderateScale(14),
-    },
-    backBtn: {
-        position: 'absolute',
-        left: moderateScale(14),
-        top: verticalScale(12),
-        height: moderateScale(36),
-        width: moderateScale(36),
-        borderRadius: moderateScale(18),
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+  callBtn: {
+    flex: 1,
+    backgroundColor: Colors.primary,
+    borderRadius: moderateScale(12),
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: verticalScale(12),
+    gap: moderateScale(6),
+  },
+
+  whatsappBtn: {
+    flex: 1,
+    backgroundColor: '#25D366',
+    borderRadius: moderateScale(12),
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: verticalScale(12),
+    gap: moderateScale(6),
+  },
+
+  btnText: {
+    color: Colors.white,
+    fontWeight: '600',
+    fontSize: moderateScale(14),
+  },
+
+  backBtn: {
+    position: 'absolute',
+    left: moderateScale(14),
+    top: verticalScale(12),
+    height: moderateScale(36),
+    width: moderateScale(36),
+    borderRadius: moderateScale(18),
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });

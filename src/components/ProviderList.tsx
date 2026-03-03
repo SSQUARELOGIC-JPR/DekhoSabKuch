@@ -5,16 +5,17 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
-
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
 import StarRating from './StarRating';
 import { ProviderListProps, Provider } from '../types/interfaces';
 import { useTranslation } from '../localization/useTranslation';
 import { translateDynamic } from '../localization/translateDynamic';
+import { ENV } from '../config/env';
 
 const ProviderList: React.FC<ProviderListProps> = ({
   data,
@@ -32,7 +33,15 @@ const ProviderList: React.FC<ProviderListProps> = ({
     >
       {/* Avatar */}
       <View style={styles.avatar}>
-        <Icon name="person" size={moderateScale(20)} color={Colors.white} />
+        {item.profileImage ? (
+          <Image
+            source={{ uri: ENV.IMAGE_BASE_URL + 'uploads/' + item.profileImage }}
+            style={styles.avatarImg}
+            resizeMode="cover"
+          />
+        ) : (
+          <Icon name="person" size={moderateScale(20)} color={Colors.white} />
+        )}
       </View>
 
       {/* Info */}
@@ -98,7 +107,7 @@ const ProviderList: React.FC<ProviderListProps> = ({
   return (
     <FlatList
       data={data}
-      keyExtractor={(item) => item.id}
+      keyExtractor={(item) => item._id}
       renderItem={renderItem}
       scrollEnabled={false}
       contentContainerStyle={styles.list}
@@ -138,6 +147,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.08)',
+    overflow: 'hidden',
   },
 
   info: {
@@ -198,5 +210,10 @@ const styles = StyleSheet.create({
     marginTop: verticalScale(20),
     color: Colors.textSecondary,
     ...Typography.small,
+  },
+  avatarImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: moderateScale(10),
   },
 });

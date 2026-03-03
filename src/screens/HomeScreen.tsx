@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   ScrollView,
   StyleSheet,
   Linking,
+  ActivityIndicator,
+  Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,7 +17,6 @@ import { useNavigation } from '@react-navigation/native';
 
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
-import { providers } from '../utils/providersData';
 import CategoryList from '../components/CategoryList';
 import ProviderList from '../components/ProviderList';
 import AccessBlockModal from '../components/AccessBlockModal';
@@ -23,6 +24,9 @@ import { Routes } from '../constants/routes';
 import { RootState } from '../store';
 import { useTranslation } from '../localization/useTranslation';
 import { translateDynamic } from '../localization/translateDynamic';
+import { getProvidersApi } from '../services/api';
+import { ENV } from '../config/env';
+const LIMIT = 20;
 
 const HomeScreen = () => {
   const insets = useSafeAreaInsets();
@@ -30,36 +34,95 @@ const HomeScreen = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const t = useTranslation();
 
-  const [selectedCategory, setSelectedCategory] =
-    useState<string>('Electrician');
+  const [selectedCategory, setSelectedCategory] = useState<string>('Electrician');
+  const [redirectTo, setRedirectTo] = useState<'profile' | 'payment' | null>(null);
   const [search, setSearch] = useState<string>('');
   const [showBlocked, setShowBlocked] = useState(false);
 
+  const [providers, setProviders] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchProviders(1);
+  }, []);
+
+  const fetchProviders = async (pageNumber: number) => {
+    if (loading || (!hasMore && pageNumber !== 1)) return;
+
+    try {
+      setLoading(true);
+      const res = await getProvidersApi(pageNumber, LIMIT);
+
+      console.log('👨‍🔧 PROVIDERS API:', res);
+
+      const newProviders = res?.providers || [];
+
+      setProviders(prev => {
+        const merged =
+          pageNumber === 1 ? newProviders : [...prev, ...newProviders];
+
+        // 🔥 Remove duplicate providers by _id
+        const unique = Array.from(
+          new Map(merged.map((item: { _id: any; }) => [item._id, item])).values()
+        );
+
+        return unique;
+      });
+
+      // 📄 hasMore logic (pagination end detection)
+      if (newProviders.length < LIMIT) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
+      }
+
+      setPage(pageNumber);
+    } catch (error) {
+      console.log('❌ PROVIDERS ERROR:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadMore = () => {
+    if (!loading && hasMore) {
+      fetchProviders(page + 1);
+    }
+  };
+
   const checkAccess = () => {
-    if (!user?.profileDone || !user?.paymentDone) {
+    // Profile incomplete
+    if (!user?.profileDone) {
+      setRedirectTo('profile');
       setShowBlocked(true);
       return false;
     }
+
+    // Payment incomplete
+    if (!user?.paymentDone) {
+      setRedirectTo('payment');
+      setShowBlocked(true);
+      return false;
+    }
+
     return true;
   };
 
-  // 📞 Call
   const handleCall = (phone: string) => {
     if (!checkAccess()) return;
     Linking.openURL(`tel:${phone}`);
   };
 
-  // 💬 WhatsApp
   const handleWhatsApp = (phone: string) => {
     if (!checkAccess()) return;
-
     const url = `whatsapp://send?phone=91${phone}`;
     Linking.openURL(url).catch(() => {
       Linking.openURL(`https://wa.me/91${phone}`);
     });
   };
 
-  // 👤 View Profile
   const handleViewProfile = (provider: any) => {
     if (!checkAccess()) return;
     (navigation as any).navigate(Routes.ProviderDetails, { provider });
@@ -68,7 +131,8 @@ const HomeScreen = () => {
   const filteredProviders = providers.filter(item => {
     const translatedCategory = translateDynamic(item.category, t.categories);
 
-    const matchCategory = item.category === selectedCategory;
+    const matchCategory =
+      !selectedCategory || item.category === selectedCategory;
 
     const matchSearch =
       item.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -77,7 +141,6 @@ const HomeScreen = () => {
 
     return matchCategory && matchSearch;
   });
-
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -105,7 +168,20 @@ const HomeScreen = () => {
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        onScroll={({ nativeEvent }) => {
+          const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+
+          const isEndReached =
+            layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
+
+          if (isEndReached && hasMore && !loading) {
+            loadMore();
+          }
+        }}
+        scrollEventThrottle={400}
+      >
         {/* Categories */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
@@ -124,20 +200,35 @@ const HomeScreen = () => {
             <Text style={styles.featuredTitle}>
               {t.home.topRated}
             </Text>
+
             <Text style={styles.featuredName}>
               {filteredProviders[0]?.name || t.home.topRated}
             </Text>
+
             <Text style={styles.featuredCategory}>
               {translateDynamic(selectedCategory, t.categories)}
             </Text>
           </View>
 
           <View style={styles.featuredAvatar}>
-            <Icon
-              name="person"
-              size={moderateScale(24)}
-              color={Colors.white}
-            />
+            {filteredProviders[0]?.profileImage ? (
+              <Image
+                source={{
+                  uri:
+                    ENV.IMAGE_BASE_URL +
+                    'uploads/' +
+                    filteredProviders[0].profileImage,
+                }}
+                style={styles.featuredAvatar}
+                resizeMode="cover"
+              />
+            ) : (
+              <Icon
+                name="person"
+                size={moderateScale(24)}
+                color={Colors.white}
+              />
+            )}
           </View>
         </View>
 
@@ -148,19 +239,36 @@ const HomeScreen = () => {
           onMessage={handleWhatsApp}
           onViewProfile={handleViewProfile}
         />
+
+        {loading && (
+          <ActivityIndicator
+            size="large"
+            color={Colors.primary}
+            style={{ marginVertical: 20 }}
+          />
+        )}
       </ScrollView>
 
       {/* Access Block Modal */}
       <AccessBlockModal
         visible={showBlocked}
         title={t.profile.title}
-        subtitle={t.profile.blockSubtitle}
+        subtitle={
+          redirectTo === 'profile'
+            ? t.profile.blockSubtitle
+            : t.payment.blockSubtitle
+        }
         laterText={t.profile.later}
         okText={t.profile.completeNow}
         onClose={() => setShowBlocked(false)}
         onOk={() => {
           setShowBlocked(false);
-          (navigation as any).navigate(Routes.Profile);
+
+          if (redirectTo === 'profile') {
+            (navigation as any).navigate(Routes.Profile);
+          } else if (redirectTo === 'payment') {
+            (navigation as any).navigate(Routes.Payment);
+          }
         }}
       />
     </View>

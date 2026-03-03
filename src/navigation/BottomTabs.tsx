@@ -20,22 +20,22 @@ const BottomTabs = () => {
   const TAB_CONFIG: any = {
     Dashboard: {
       label: t.tabs.dashboard,
-      icon: 'home',
+      icon: 'home-outline',
       component: DashboardScreen,
     },
     Notifications: {
       label: t.tabs.notifications,
-      icon: 'notifications',
+      icon: 'notifications-outline',
       component: NotificationScreen,
     },
     Profile: {
       label: t.tabs.profile,
-      icon: 'person',
+      icon: 'person-outline',
       component: ProfileSetupScreen,
     },
     Settings: {
       label: t.tabs.settings,
-      icon: 'settings',
+      icon: 'settings-outline',
       component: SettingsScreen,
     },
   };
