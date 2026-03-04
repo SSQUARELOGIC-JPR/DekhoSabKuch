@@ -53,11 +53,11 @@ const baseProviders = [
 
 const imageMap = {
   Electrician: 'providers/profile/ramesh.jpg',
-  Plumber: 'providers/profile/suresh.jpg',
-  'AC Repair': 'providers/profile/coolair.jpg',
+  Plumber: 'providers/profile/suresh.jpeg',
+  'AC Repair': 'providers/profile/coolair.jpeg',
   Carpenter: 'providers/profile/woodcraft.jpg',
   Painter: 'providers/profile/colorpro.jpg',
-  Cleaning: 'providers/profile/cleanhome.jpg',
+  Cleaning: 'providers/profile/cleanhome.jpeg',
   'Beauty & Makeup': 'providers/profile/glam.jpg',
 };
 
@@ -80,7 +80,7 @@ async function seedProviders() {
 
     profileImage: imageMap[p.category],
     aadharFrontImage: 'providers/aadhar/front.jpg',
-    aadharBackImage: 'providers/aadhar/back.jpg',
+    aadharBackImage: 'providers/aadhar/back.jpeg',
 
     profileDone: true,
     paymentDone: true,
@@ -94,3 +94,12 @@ async function seedProviders() {
 }
 
 module.exports = seedProviders;
+
+if (require.main === module) {
+  const connectDB = require("../src/config/db");
+
+  connectDB().then(async () => {
+    await seedProviders();
+    process.exit();
+  });
+}
