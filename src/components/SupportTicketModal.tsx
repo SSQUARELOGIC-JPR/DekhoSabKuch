@@ -5,15 +5,15 @@ import {
   Modal,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
 } from 'react-native';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
-import { Dropdown } from 'react-native-element-dropdown';
 
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
 import { useTranslation } from '../localization/useTranslation';
 import { SupportTicketModalProps } from '../types/interfaces';
+import FormField from '../components/FormField';
+import SelectModal from '../components/SelectModal';
 
 const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
   visible,
@@ -26,6 +26,7 @@ const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
   const [type, setType] = useState<string | null>(null);
   const [summary, setSummary] = useState('');
   const [description, setDescription] = useState('');
+  const [showTypeModal, setShowTypeModal] = useState(false);
 
   const ticketTypes = useMemo(
     () => [
@@ -36,6 +37,8 @@ const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
     ],
     [t]
   );
+
+  const typeLabels = ticketTypes.map(item => item.label);
 
   const handleSubmit = () => {
     if (!type || !summary.trim() || !description.trim() || loading) return;
@@ -59,35 +62,34 @@ const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
             {t.settings.support_ticket_title}
           </Text>
 
-          <Text style={styles.label}>{t.settings.ticket_type}</Text>
-          <Dropdown
-            style={styles.dropdown}
-            data={ticketTypes}
-            labelField="label"
-            valueField="value"
+          {/* Ticket Type Dropdown */}
+          <FormField
+            icon="list"
             placeholder={t.settings.select_ticket_type}
-            value={type}
-            onChange={item => setType(item.value)}
+            value={
+              ticketTypes.find(i => i.value === type)?.label || ''
+            }
+            isDropdown
+            editable={false}
+            onPressDropdown={() => setShowTypeModal(true)}
           />
 
-          <Text style={styles.label}>{t.settings.summary}</Text>
-          <TextInput
+          {/* Summary */}
+          <FormField
+            icon="file-text"
+            placeholder={t.settings.enter_summary}
             value={summary}
             onChangeText={setSummary}
-            placeholder={t.settings.enter_summary}
-            style={styles.input}
-            placeholderTextColor={Colors.textSecondary}
           />
 
-          <Text style={styles.label}>{t.settings.description}</Text>
-          <TextInput
+          {/* Description */}
+          <FormField
+            icon="message-square"
+            placeholder={t.settings.describe_issue}
             value={description}
             onChangeText={setDescription}
-            placeholder={t.settings.describe_issue}
             multiline
             numberOfLines={4}
-            style={[styles.input, styles.textArea]}
-            placeholderTextColor={Colors.textSecondary}
           />
 
           <View style={styles.row}>
@@ -114,6 +116,20 @@ const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
           </View>
         </View>
       </View>
+
+      {/* Type Selection Modal */}
+      <SelectModal
+        visible={showTypeModal}
+        title={t.settings.ticket_type}
+        data={typeLabels}
+        onClose={() => setShowTypeModal(false)}
+        onSelect={(label: string) => {
+          const selected = ticketTypes.find(
+            item => item.label === label
+          );
+          setType(selected?.value || null);
+        }}
+      />
     </Modal>
   );
 };
@@ -137,33 +153,7 @@ const styles = StyleSheet.create({
     ...Typography.subtitle,
     fontWeight: '700',
     color: Colors.textPrimary,
-    marginBottom: verticalScale(12),
-  },
-  label: {
-    ...Typography.small,
-    color: Colors.textSecondary,
-    marginBottom: verticalScale(4),
-    marginTop: verticalScale(8),
-  },
-  dropdown: {
-    height: verticalScale(48),
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: moderateScale(10),
-    paddingHorizontal: moderateScale(10),
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: moderateScale(10),
-    paddingHorizontal: moderateScale(10),
-    height: verticalScale(46),
-    color: Colors.textPrimary,
-  },
-  textArea: {
-    height: verticalScale(90),
-    textAlignVertical: 'top',
-    paddingTop: verticalScale(8),
+    marginBottom: verticalScale(10),
   },
   row: {
     flexDirection: 'row',

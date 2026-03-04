@@ -17,7 +17,7 @@ import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { Colors } from '../theme/colors';
-import { AppInput } from '../components/AppInput';
+import FormField from '../components/FormField';
 import { ImagePickerModal } from '../components/ImagePickerModal';
 import { requestCameraPermission } from '../utils/permissions';
 import { Routes } from '../constants/routes';
@@ -162,12 +162,9 @@ const ProfileScreen = ({ navigation }: any) => {
       } as any);
     }
 
-    const res = await apiHandler(() =>
-      updateProfileApi(formData)
-    );
+    const res = await apiHandler(() => updateProfileApi(formData));
 
     setLoading(false);
-
     if (!res?.data) return;
 
     dispatch(updateUserProfile(res.data));
@@ -199,10 +196,7 @@ const ProfileScreen = ({ navigation }: any) => {
         setShowPicker(true);
       }}>
       {image ? (
-        <Image
-          source={{ uri: getImageUri(image) }}
-          style={styles.docImg}
-        />
+        <Image source={{ uri: getImageUri(image) }} style={styles.docImg} />
       ) : (
         <>
           <Icon name="upload" size={20} color={Colors.primary} />
@@ -218,14 +212,8 @@ const ProfileScreen = ({ navigation }: any) => {
         <Text style={styles.title}>{t.profile.profilePaggeTitle}</Text>
 
         {user?.profileDone && (
-          <TouchableOpacity
-            style={styles.editBtn}
-            onPress={() => setIsEdit(!isEdit)}>
-            <Icon
-              name={isEdit ? 'x' : 'edit-2'}
-              size={14}
-              color={Colors.white}
-            />
+          <TouchableOpacity style={styles.editBtn} onPress={() => setIsEdit(!isEdit)}>
+            <Icon name={isEdit ? 'x' : 'edit-2'} size={14} color={Colors.white} style={{ marginRight: 6 }} />
             <Text style={styles.editText}>
               {isEdit ? t.common.cancel : t.profile.edit}
             </Text>
@@ -240,47 +228,64 @@ const ProfileScreen = ({ navigation }: any) => {
             setShowPicker(true);
           }}>
           {profileImg ? (
-            <Image
-              source={{ uri: getImageUri(profileImg) }}
-              style={styles.headerAvatarImg}
-            />
+            <Image source={{ uri: getImageUri(profileImg) }} style={styles.headerAvatarImg} />
           ) : (
             <Icon name="camera" size={22} color={Colors.white} />
           )}
         </TouchableOpacity>
       </View>
 
-      <KeyboardAvoidingView
-        style={styles.body}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={styles.body} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView showsVerticalScrollIndicator={false}>
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>
-              {t.profile.personalInfo}
-            </Text>
+            <Text style={styles.sectionTitle}>{t.profile.personalInfo}</Text>
 
-            <AppInput icon="user" placeholder={t.profile.name} value={name} onChangeText={setName} editable={isEdit} />
-            <AppInput icon="phone" placeholder="Mobile Number" value={user?.mobile || ''} editable={false} />
+            <FormField icon="user" placeholder={t.profile.name} value={name} onChangeText={setName} editable={isEdit} />
+            <FormField icon="phone" placeholder="Mobile Number" value={user?.mobile || ''} editable={false} />
 
-            <Text style={styles.sectionTitle}>
-              {t.profile.addressDetails}
-            </Text>
+            <Text style={styles.sectionTitle}>{t.profile.addressDetails}</Text>
 
-            <AppInput icon="map" placeholder={t.profile.village} value={village} onChangeText={setVillage} editable={isEdit} />
-            <AppInput icon="map-pin" placeholder={t.profile.tehsil} value={tehsil} onChangeText={setTehsil} editable={isEdit} />
-            <AppInput icon="home" placeholder={t.profile.city} value={city} onChangeText={setCity} editable={isEdit} />
-            <AppInput icon="flag" placeholder={t.profile.state} value={stateVal} onChangeText={setStateVal} editable={isEdit} />
-            <AppInput icon="hash" placeholder={t.profile.pincode} value={pincode} onChangeText={(v)=>setPincode(v.replace(/[^0-9]/g,''))} keyboardType="number-pad" maxLength={6} editable={isEdit} />
+            <FormField icon="flag" placeholder={t.profile.state} value={stateVal} onChangeText={setStateVal} editable={isEdit} />
+            <FormField icon="home" placeholder={t.profile.city} value={city} onChangeText={setCity} editable={isEdit} />
+            <FormField icon="map-pin" placeholder={t.profile.tehsil} value={tehsil} onChangeText={setTehsil} editable={isEdit} />
+            <FormField icon="map" placeholder={t.profile.village} value={village} onChangeText={setVillage} editable={isEdit} />
+            <FormField
+              icon="hash"
+              placeholder={t.profile.pincode}
+              value={pincode}
+              keyboardType="number-pad"
+              maxLength={6}
+              onChangeText={(v) => setPincode(v.replace(/[^0-9]/g, ''))}
+              editable={isEdit}
+            />
 
             {(role === 'provider' || role === 'both') && (
               <>
-                <Text style={styles.sectionTitle}>
-                  {t.profile.professionalDetails}
-                </Text>
+                <Text style={styles.sectionTitle}>{t.profile.professionalDetails}</Text>
 
-                <AppInput icon="tool" placeholder={t.profile.category} value={category} onChangeText={setCategory} editable={isEdit} />
-                <AppInput icon="award" placeholder={t.profile.experience} value={experience} onChangeText={(v)=>setExperience(v.replace(/[^0-9]/g,''))} keyboardType="number-pad" editable={isEdit} />
-                <AppInput icon="file-text" placeholder={t.profile.aboutService} value={about} onChangeText={setAbout} editable={isEdit} multiline numberOfLines={4} inputStyle={styles.textArea} />
+                <FormField icon="tool" placeholder={t.profile.category} value={category} onChangeText={setCategory} editable={isEdit} />
+
+                <FormField
+                  icon="award"
+                  placeholder={t.profile.experience}
+                  value={experience}
+                  keyboardType="number-pad"
+                  maxLength={2}
+                  onChangeText={(v) => {
+                    const cleaned = v.replace(/[^0-9]/g, '');
+                    if (cleaned.length <= 2) setExperience(cleaned);
+                  }}
+                  editable={isEdit}
+                />
+
+                <FormField
+                  icon="file-text"
+                  placeholder={t.profile.aboutService}
+                  value={about}
+                  onChangeText={setAbout}
+                  editable={isEdit}
+                  multiline
+                />
 
                 <Text style={styles.docTitle}>{t.profile.uploadId}</Text>
                 <View style={styles.row}>
@@ -294,19 +299,10 @@ const ProfileScreen = ({ navigation }: any) => {
 
         {isEdit && (
           <TouchableOpacity
-            style={[
-              styles.ctaButton,
-              isValid ? styles.ctaActive : styles.ctaDisabled,
-            ]}
+            style={[styles.ctaButton, isValid ? styles.ctaActive : styles.ctaDisabled]}
             disabled={!isValid || loading}
             onPress={handleSubmit}>
-            {loading ? (
-              <ActivityIndicator color={Colors.white} />
-            ) : (
-              <Text style={styles.ctaText}>
-                {t.profile.continue}
-              </Text>
-            )}
+            {loading ? <ActivityIndicator color={Colors.white} /> : <Text style={styles.ctaText}>{t.profile.continue}</Text>}
           </TouchableOpacity>
         )}
       </KeyboardAvoidingView>
@@ -348,6 +344,7 @@ export default ProfileScreen;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.backgroundAlt },
+
   header: {
     backgroundColor: Colors.primary,
     paddingHorizontal: moderateScale(16),
@@ -356,6 +353,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: moderateScale(24),
     alignItems: 'center',
   },
+
   editBtn: {
     position: 'absolute',
     right: moderateScale(16),
@@ -367,11 +365,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+
   editText: {
     color: Colors.white,
     fontSize: moderateScale(13),
     fontWeight: '600',
   },
+
   headerAvatar: {
     height: moderateScale(70),
     width: moderateScale(70),
@@ -383,85 +383,88 @@ const styles = StyleSheet.create({
     marginTop: verticalScale(10),
     backgroundColor: Colors.primary,
   },
+
   headerAvatarImg: {
     height: '100%',
     width: '100%',
     borderRadius: moderateScale(35),
   },
+
   title: {
     color: Colors.white,
     fontSize: moderateScale(20),
     fontWeight: '700',
   },
+
   body: { flex: 1, paddingHorizontal: moderateScale(16) },
-  scrollContent: {
-    paddingTop: verticalScale(20),
-    paddingBottom: verticalScale(10),
-  },
+
   card: {
     backgroundColor: Colors.white,
-    borderRadius: moderateScale(12),
-    paddingVertical: moderateScale(10),
-    paddingHorizontal: moderateScale(6),
+    borderRadius: moderateScale(14),
+    padding: moderateScale(14),
     borderWidth: 1,
     borderColor: Colors.border,
-    gap: 8,
+    marginTop: verticalScale(14),
   },
+
   sectionTitle: {
-    fontSize: moderateScale(15),
+    fontSize: moderateScale(14),
     fontWeight: '700',
     color: Colors.textPrimary,
-    marginTop: verticalScale(10),
+    marginTop: verticalScale(12),
     marginBottom: verticalScale(4),
   },
+
   docTitle: {
-    fontSize: moderateScale(16),
+    fontSize: moderateScale(14),
     fontWeight: '600',
     color: Colors.textPrimary,
+    marginTop: verticalScale(10),
   },
-  row: { flexDirection: 'row', gap: moderateScale(12) },
+
+  row: {
+    flexDirection: 'row',
+    gap: moderateScale(12),
+    marginTop: verticalScale(8),
+  },
+
   uploadBox: {
     flex: 1,
     height: moderateScale(90),
-    borderRadius: moderateScale(12),
+    borderRadius: moderateScale(10),
     borderWidth: 1,
     borderColor: Colors.border,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: Colors.lightWhite,
   },
+
   uploadText: {
     color: Colors.textSecondary,
     marginTop: verticalScale(6),
     fontSize: moderateScale(13),
   },
+
   docImg: {
     height: '100%',
     width: '100%',
-    borderRadius: moderateScale(12),
+    borderRadius: moderateScale(10),
   },
-  bottomBtnWrap: {
-    paddingTop: verticalScale(6),
-    paddingBottom: verticalScale(4),
-  },
+
   ctaButton: {
-    height: verticalScale(36),
-    borderRadius: moderateScale(8),
+    height: verticalScale(42),
+    borderRadius: moderateScale(10),
     justifyContent: 'center',
     alignItems: 'center',
-    alignSelf: 'center',
-    paddingHorizontal: moderateScale(24),
+    marginVertical: verticalScale(10),
   },
+
   ctaActive: { backgroundColor: Colors.accent },
   ctaDisabled: { backgroundColor: Colors.lightGray },
+
   ctaText: {
     fontSize: moderateScale(15),
     fontWeight: '600',
     color: Colors.white,
-  },
-  textArea: {
-    minHeight: verticalScale(90),
-    textAlignVertical: 'top',
-    paddingTop: verticalScale(0),
   },
 });
