@@ -44,3 +44,7 @@ android/app/.cxx/
 android/.cxx/
 android/build/
 android/app/build/
+# Android build files
+android/.cxx
+android/app/.cxx
+android/build
