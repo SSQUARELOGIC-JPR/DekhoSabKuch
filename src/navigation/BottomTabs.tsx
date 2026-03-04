@@ -1,69 +1,191 @@
-import React from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Icon from 'react-native-vector-icons/Feather';
-
-import HomeScreen from '../screens/HomeScreen';
+import DashboardScreen from '../screens/HomeScreen';
 import NotificationScreen from '../screens/NotificationScreen';
-import ProfileScreen from '../screens/ProfileSetupScreen';
-import SettingScreen from '../screens/SettingScreen';
+import ProfileSetupScreen from '../screens/ProfileSetupScreen';
+import SettingsScreen from '../screens/SettingScreen';
+
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/Ionicons';
+
 import { Colors } from '../theme/colors';
+import { Typography } from '../theme/typography';
+import { useTranslation } from '../localization/useTranslation';
+
+import { getUnreadCountApi } from '../services/api';
+import { apiHandler } from '../utils/apiHandler';
+
+import { StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 const Tab = createBottomTabNavigator();
 
-const BottomTabs = ({ route }: any) => {
-  const role = route?.params?.role; // pass role from auth/profile flow
+const BottomTabs = () => {
+
+  const insets = useSafeAreaInsets();
+  const t = useTranslation();
+
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // ===============================
+  // 🔔 Load unread notification count
+  // ===============================
+  const loadUnreadCount = async () => {
+
+    const res = await apiHandler(() => getUnreadCountApi());
+
+    if (res?.success) {
+      setUnreadCount(res.count || 0);
+    }
+  };
+
+  // ===============================
+  // 🔁 Polling (every 15 sec)
+  // ===============================
+  useEffect(() => {
+
+    loadUnreadCount();
+
+    const interval = setInterval(() => {
+      loadUnreadCount();
+    }, 15000);
+
+    return () => clearInterval(interval);
+
+  }, []);
+
+  // ===============================
+  // 🔁 Reload when tab focused
+  // ===============================
+  useFocusEffect(
+    useCallback(() => {
+      loadUnreadCount();
+    }, [])
+  );
+
+  // ===============================
+  // 🔥 Tab Config
+  // ===============================
+  const TAB_CONFIG: any = {
+    Dashboard: {
+      label: t.tabs.dashboard,
+      icon: 'home-outline',
+      component: DashboardScreen,
+    },
+    Notifications: {
+      label: t.tabs.notifications,
+      icon: 'notifications-outline',
+      component: NotificationScreen,
+    },
+    Profile: {
+      label: t.tabs.profile,
+      icon: 'person-outline',
+      component: ProfileSetupScreen,
+    },
+    Settings: {
+      label: t.tabs.settings,
+      icon: 'settings-outline',
+      component: SettingsScreen,
+    },
+  };
 
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: '#9e9e9e',
-        tabBarStyle: {
-          height: 65,
-          paddingBottom: 8,
-          paddingTop: 6,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600',
-        },
-        tabBarIcon: ({ color, size }) => {
-          let iconName: string = 'home';
+      screenOptions={({ route }) => {
 
-          if (route.name === 'Home') iconName = 'home';
-          else if (route.name === 'Notification') iconName = 'bell';
-          else if (route.name === 'Profile') iconName = 'user';
-          else if (route.name === 'Setting') iconName = 'settings';
+        const config = TAB_CONFIG[route.name];
 
-          return <Icon name={iconName} size={size} color={color} />;
-        },
-      })}
+        return {
+
+          headerShown: false,
+
+          tabBarStyle: {
+            height: 65 + insets.bottom,
+            paddingBottom: insets.bottom,
+            backgroundColor: Colors.white,
+          },
+
+          tabBarLabelStyle: Typography.tabLabel,
+          tabBarActiveTintColor: Colors.primary,
+          tabBarInactiveTintColor: Colors.black,
+
+          tabBarIcon: ({ color }) => {
+
+            if (route.name === 'Notifications') {
+              return (
+                <View style={{ position: 'relative' }}>
+
+                  <Icon
+                    name={config.icon}
+                    size={22}
+                    color={color}
+                  />
+
+                  {unreadCount > 0 && (
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </Text>
+                    </View>
+                  )}
+
+                </View>
+              );
+            }
+
+            return (
+              <Icon
+                name={config.icon}
+                size={22}
+                color={color}
+              />
+            );
+          },
+
+          tabBarLabel: config.label,
+
+        };
+
+      }}
     >
-      {/* Home */}
-      <Tab.Screen name="Home">
-        {props => <HomeScreen {...props} role={role} />}
-      </Tab.Screen>
+      {Object.keys(TAB_CONFIG).map((key) => {
 
-      {/* Notification */}
-      <Tab.Screen
-        name="Notification"
-        component={NotificationScreen}
-      />
+        const config = TAB_CONFIG[key];
 
-      {/* Profile */}
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-      />
+        return (
+          <Tab.Screen
+            key={key}
+            name={key}
+            component={config.component}
+          />
+        );
 
-      {/* Setting */}
-      <Tab.Screen
-        name="Setting"
-        component={SettingScreen}
-      />
+      })}
     </Tab.Navigator>
   );
 };
 
 export default BottomTabs;
+
+const styles = StyleSheet.create({
+
+  badge: {
+    position: 'absolute',
+    top: -6,
+    right: -10,
+    backgroundColor: Colors.error,
+    borderRadius: 10,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 3,
+  },
+
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+
+});

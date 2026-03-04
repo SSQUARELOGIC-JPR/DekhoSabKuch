@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+<uses-permission android:name="android.permission.VIBRATE" />
 
     <application
       android:name=".MainApplication"
@@ -14,7 +15,6 @@
       android:allowBackup="false"
       android:theme="@style/AppTheme"
       android:usesCleartextTraffic="${usesCleartextTraffic}"
-      android:screenOrientation="portrait"
       android:requestLegacyExternalStorage="true"
       android:supportsRtl="true">
       <activity
@@ -23,6 +23,7 @@
         android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
         android:launchMode="singleTask"
         android:windowSoftInputMode="adjustResize"
+        android:screenOrientation="portrait"
         android:exported="true">
         <intent-filter>
             <action android:name="android.intent.action.MAIN" />

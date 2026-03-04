@@ -10,23 +10,22 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
 
-import { Strings } from '../constants/strings';
-import { Routes } from '../constants/routes';
 import { Images } from '../constants/images';
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
+import { useTranslation } from '../localization/useTranslation';
 
-const SplashScreen = ({ navigation }: any) => {
-  // Logo animation
+const SplashScreen = () => {
+  const t = useTranslation();
+
   const fadeAnim = useRef(new Animated.Value(0.2)).current;
   const scaleAnim = useRef(new Animated.Value(0.6)).current;
 
-  // Text animation
   const textTranslate = useRef(new Animated.Value(40)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Logo fade + zoom
+    // Logo animation
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -40,7 +39,7 @@ const SplashScreen = ({ navigation }: any) => {
       }),
     ]).start();
 
-    // Text slide animation
+    // Text animation
     Animated.parallel([
       Animated.timing(textTranslate, {
         toValue: 0,
@@ -55,13 +54,6 @@ const SplashScreen = ({ navigation }: any) => {
         useNativeDriver: true,
       }),
     ]).start();
-
-    // Navigate after animation
-    const t = setTimeout(() => {
-      navigation.replace(Routes.Home);
-    }, 2600); // 🔥 correct duration (2.6 sec)
-
-    return () => clearTimeout(t);
   }, []);
 
   return (
@@ -69,24 +61,19 @@ const SplashScreen = ({ navigation }: any) => {
       source={Images.splashBg}
       style={styles.bg}
       resizeMode="cover"
-      imageStyle={{ transform: [{ scale: 1.08 }] }} // subtle zoom effect
+      imageStyle={{ transform: [{ scale: 1.08 }] }}
     >
-      {/* Gradient Overlay */}
       <View style={styles.overlay} />
 
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" />
 
-        {/* Center Content */}
         <View style={styles.center}>
           <Animated.Image
             source={Images.logoBadge}
             style={[
               styles.logo,
-              {
-                opacity: fadeAnim,
-                transform: [{ scale: scaleAnim }],
-              },
+              { opacity: fadeAnim, transform: [{ scale: scaleAnim }] },
             ]}
             resizeMode="contain"
           />
@@ -99,14 +86,13 @@ const SplashScreen = ({ navigation }: any) => {
               marginTop: verticalScale(14),
             }}
           >
-            <Text style={styles.title}>{Strings.appName}</Text>
-            <Text style={styles.tagline}>{Strings.tagline}</Text>
+            <Text style={styles.title}>{t.splash.appName}</Text>
+            <Text style={styles.tagline}>{t.splash.tagline}</Text>
           </Animated.View>
         </View>
 
-        {/* Bottom */}
         <Text style={styles.poweredBy}>
-          {Strings.common.poweredBy}
+          {t.common.poweredBy}
         </Text>
       </SafeAreaView>
     </ImageBackground>
@@ -120,7 +106,7 @@ const styles = StyleSheet.create({
 
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10, 35, 120, 0.25)', // premium blue tint
+    backgroundColor: 'rgba(10, 35, 120, 0.25)',
   },
 
   container: {
@@ -139,27 +125,17 @@ const styles = StyleSheet.create({
   logo: {
     height: moderateScale(130),
     width: moderateScale(130),
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 12, // Android glow
+    elevation: 12,
   },
 
   title: {
     color: '#FFFFFF',
-    textShadowColor: 'rgba(0,0,0,0.25)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 6,
     ...Typography.title,
   },
 
   tagline: {
     marginTop: verticalScale(6),
     color: '#EAF2FF',
-    textShadowColor: 'rgba(0,0,0,0.2)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
     ...Typography.subtitle,
   },
 

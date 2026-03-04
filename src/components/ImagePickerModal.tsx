@@ -9,8 +9,8 @@ import {
 } from 'react-native';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
 import { Colors } from '../theme/colors';
-import { Strings } from '../constants/strings';
-import { ImagePickerModalProps } from 'src/types/interfaces';
+import { ImagePickerModalProps } from '../types/interfaces';
+import { useTranslation } from '../localization/useTranslation';
 
 export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
   visible,
@@ -18,25 +18,29 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
   onCamera,
   onGallery,
 }) => {
+  const t = useTranslation();
+
   return (
     <Modal visible={visible} transparent animationType="fade">
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
           <View style={styles.box}>
-            <Text style={styles.title}>{Strings.cameraModal.title}</Text>
+            <Text style={styles.title}>{t.cameraModal.title}</Text>
 
             <TouchableOpacity style={styles.btn} onPress={onCamera}>
-              <Text style={styles.btnText}>{Strings.cameraModal.camera}</Text>
+              <Text style={styles.btnText}>{t.cameraModal.camera}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.btn} onPress={onGallery}>
-              <Text style={styles.btnText}>{Strings.cameraModal.gallery}</Text>
+              <Text style={styles.btnText}>{t.cameraModal.gallery}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.btn, styles.cancelBtn]}
               onPress={onClose}>
-              <Text style={[styles.btnText, { color: 'red' }]}>{Strings.cameraModal.cancel}</Text>
+              <Text style={[styles.btnText, { color: 'red' }]}>
+                {t.common.cancel}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
