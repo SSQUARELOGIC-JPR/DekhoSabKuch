@@ -1,17 +1,30 @@
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
+const messages = require('../constants/messages');
+
 const authController = require('../controllers/auth');
 const authMiddleware = require('../middleware/auth.middleware');
 
-// Public
-router.post('/send-otp', authController.sendOtp);
+// 🔐 OTP Rate Limiter
+const otpLimiter = rateLimit({
+  windowMs: 2 * 60 * 1000,
+  max: 5,
+  message: {
+    success: false,
+    message: messages.auth.tooManyOtp,
+  },
+});
+
+// Public Routes
+router.post('/send-otp', otpLimiter, authController.sendOtp);
 router.post('/verify-otp', authController.verifyOtp);
 
 // Protected
-router.post('/save-role', authMiddleware, authController.saveRole);
-router.get('/me', authMiddleware, authController.getMe);
+router.use(authMiddleware);
 
-router.post('/logout', authMiddleware, authController.logout);
-
+router.post('/role', authController.saveRole);
+router.get('/me', authController.getMe);
+router.post('/logout', authController.logout);
 
 module.exports = router;

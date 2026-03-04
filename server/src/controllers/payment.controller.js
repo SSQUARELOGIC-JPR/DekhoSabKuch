@@ -1,30 +1,37 @@
 const User = require('../models/User');
+const messages = require('../constants/messages');
 
 exports.paymentSuccess = async (req, res) => {
   try {
     const userId = req.userId;
 
-    // 🛡 Safe body handling
-    const amount = req.body?.amount;
-    console.log("USER ID =>", req.userId);
+    const amount = Number(req.body?.amount);
+
+    console.log("USER ID =>", userId);
     console.log("BODY =>", req.body);
 
+    // 🔍 Amount validation
     if (!amount) {
       return res.status(400).json({
         success: false,
-        message: 'Payment amount is required',
+        message: messages.payment.amountRequired,
       });
     }
 
     const user = await User.findById(userId);
-    if (!user)
-      return res.status(404).json({ success: false, message: 'User not found' });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: messages.auth.userNotFound,
+      });
+    }
 
     // 👤 Customer payment ₹15
     if (user.role === 'customer' && amount !== 15) {
       return res.status(400).json({
         success: false,
-        message: 'Customer payment must be ₹15',
+        message: messages.payment.customerAmountInvalid,
       });
     }
 
@@ -32,7 +39,7 @@ exports.paymentSuccess = async (req, res) => {
     if ((user.role === 'provider' || user.role === 'both') && amount !== 50) {
       return res.status(400).json({
         success: false,
-        message: 'Provider payment must be ₹50',
+        message: messages.payment.providerAmountInvalid,
       });
     }
 
@@ -43,16 +50,17 @@ exports.paymentSuccess = async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: 'Complete provider profile before payment',
+        message: messages.payment.providerProfileIncomplete,
       });
     }
 
+    // ✅ Mark payment done
     user.paymentDone = true;
     await user.save();
 
     res.json({
       success: true,
-      message: 'Payment successful',
+      message: messages.payment.success,
       data: {
         role: user.role,
         paymentDone: user.paymentDone,
@@ -62,8 +70,13 @@ exports.paymentSuccess = async (req, res) => {
           user.paymentDone,
       },
     });
+
   } catch (error) {
     console.error('Payment Error:', error);
-    res.status(500).json({ success: false, message: 'Payment failed' });
+
+    res.status(500).json({
+      success: false,
+      message: messages.payment.failed,
+    });
   }
 };

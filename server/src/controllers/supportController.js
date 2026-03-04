@@ -1,17 +1,17 @@
 const SupportTicket = require('../models/SupportTicket');
+const messages = require('../constants/messages');
 
 exports.createSupportTicket = async (req, res) => {
   try {
-    console.log('BODY =>', req.body); // 👈 DEBUG
-
     const userId = req.userId;
 
     const { type, summary, description } = req.body || {};
 
+    // 🔍 Validation
     if (!type || !summary || !description) {
       return res.status(400).json({
         success: false,
-        message: 'All fields are required',
+        message: messages.support.fieldsRequired,
       });
     }
 
@@ -24,14 +24,16 @@ exports.createSupportTicket = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: 'Support ticket created successfully',
+      message: messages.support.created,
       data: ticket,
     });
+
   } catch (error) {
     console.error('Support Ticket Error:', error);
+
     return res.status(500).json({
       success: false,
-      message: 'Server error',
+      message: messages.common.serverError,
     });
   }
 };

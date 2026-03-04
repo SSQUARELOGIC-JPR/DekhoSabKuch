@@ -25,8 +25,14 @@ exports.sendOtp = async (req, res) => {
       });
     }
 
-    const otp = '1234'; // dummy OTP (dev)
-    otpStore.set(mobile, otp);
+    // 🔐 Generate OTP (dev mode static)
+    const otp = '1234';
+
+    // ⏳ Store OTP with expiry (5 minutes)
+    otpStore.set(mobile, {
+      otp,
+      expiresAt: Date.now() + 5 * 60 * 1000,
+    });
 
     console.log(`📲 OTP for ${mobile}: ${otp}`);
 
@@ -62,28 +68,11 @@ exports.verifyOtp = async (req, res) => {
       });
     }
 
-    // 🔍 Check if user already exists (already verified before)
-    let user = await User.findOne({ mobile });
+    const storedData = otpStore.get(mobile);
 
-    // 👉 If user exists but OTP expired → still allow login
-    const storedOtp = otpStore.get(mobile);
-
-    if (!storedOtp) {
-      if (user) {
-        const token = jwt.sign(
-          { userId: user._id },
-          process.env.JWT_SECRET,
-          { expiresIn: '30d' }
-        );
-
-        return res.json({
-          success: true,
-          message: messages.auth.loginSuccess,
-          token,
-          user,
-        });
-      }
-
+    // ❌ OTP not found or expired
+    if (!storedData || storedData.expiresAt < Date.now()) {
+      otpStore.delete(mobile);
       return res.status(400).json({
         success: false,
         message: messages.auth.invalidOtp,
@@ -91,7 +80,7 @@ exports.verifyOtp = async (req, res) => {
     }
 
     // ❌ Wrong OTP
-    if (storedOtp !== otp) {
+    if (storedData.otp !== otp) {
       return res.status(400).json({
         success: false,
         message: messages.auth.invalidOtp,
@@ -101,9 +90,17 @@ exports.verifyOtp = async (req, res) => {
     // ✅ OTP correct → remove it
     otpStore.delete(mobile);
 
+    // 🔍 Check if user exists
+    let user = await User.findOne({ mobile });
+
     // 👤 Create user if not exists
     if (!user) {
       user = await User.create({ mobile });
+    }
+
+    // 🔐 Ensure JWT secret exists
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET missing in environment');
     }
 
     // 🔐 Generate Token
@@ -170,8 +167,6 @@ exports.getMe = async (req, res) => {
 
     const user = await User.findById(userId).lean();
 
-    console.log("TOKEN USER ID =>", req.userId);
-
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -202,18 +197,18 @@ exports.getMe = async (req, res) => {
       servicesDone: user.servicesDone,
       isAvailable: user.isAvailable,
 
-      // 📸 Images (full URL)
+      // 📸 Images
       profileImage: user.profileImage
         ? `${baseUrl}/${user.profileImage}`
         : '',
 
-      // 🔒 Aadhaar (only if provider role)
       aadharFrontImage:
         user.role === 'provider' || user.role === 'both'
           ? user.aadharFrontImage
             ? `${baseUrl}/${user.aadharFrontImage}`
             : ''
           : '',
+
       aadharBackImage:
         user.role === 'provider' || user.role === 'both'
           ? user.aadharBackImage
@@ -221,7 +216,7 @@ exports.getMe = async (req, res) => {
             : ''
           : '',
 
-      // 🔥 Flow Flags (important for frontend routing)
+      // 🔥 Flow Flags
       profileDone: user.profileDone,
       paymentDone: user.paymentDone,
       isUserProfileComplete: user.isUserProfileComplete,
@@ -236,11 +231,12 @@ exports.getMe = async (req, res) => {
     console.error('Get Me Error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error',
+      message: messages.common.serverError,
     });
   }
 };
 
+// 🚪 Logout
 exports.logout = async (req, res) => {
   try {
     return res.status(200).json({

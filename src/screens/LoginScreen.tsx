@@ -64,7 +64,7 @@ const LoginScreen = () => {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           enableOnAndroid
-          extraScrollHeight={30}
+          extraScrollHeight={120}
         >
           <View style={styles.container}>
             {/* Top Logo */}
@@ -79,8 +79,9 @@ const LoginScreen = () => {
                 placeholder={t.login.mobilePlaceholder}
                 value={mobile}
                 onChangeText={handleChange}
-                keyboardType="number-pad"
+                keyboardType="phone-pad"
                 maxLength={10}
+                returnKeyType="done"
               />
 
               <AppButton

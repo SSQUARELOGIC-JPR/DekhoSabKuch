@@ -4,7 +4,7 @@ const { updateProfile, deleteAccount } = require('../controllers/user.controller
 const authMiddleware = require('../middleware/auth.middleware');
 const upload = require('../middleware/upload.middleware');
 
-//Multipart Upload Fields
+// 🔥 Update Profile (with images)
 router.put(
   '/profile',
   authMiddleware,
@@ -16,9 +16,7 @@ router.put(
   updateProfile
 );
 
-// 🔥 Update Profile
-router.put('/profile', authMiddleware, updateProfile);
-
+// 🗑 Delete Account
 router.delete('/delete', authMiddleware, deleteAccount);
 
 module.exports = router;

@@ -1,4 +1,26 @@
 const User = require('../models/User');
+const messages = require('../constants/messages');
+const fs = require('fs');
+const path = require('path');
+
+// 🔥 Safe file delete
+const deleteOldFile = (filePath) => {
+  try {
+    if (!filePath) return;
+
+    const fullPath = path.join(
+      __dirname,
+      '../../uploads',
+      filePath.replace(/^\/+/, '')
+    );
+
+    if (fs.existsSync(fullPath)) {
+      fs.unlinkSync(fullPath);
+    }
+  } catch (error) {
+    console.error('File delete error:', error);
+  }
+};
 
 exports.updateProfile = async (req, res) => {
   try {
@@ -18,10 +40,15 @@ exports.updateProfile = async (req, res) => {
     } = req.body;
 
     const user = await User.findById(userId);
-    if (!user)
-      return res.status(404).json({ success: false, message: 'User not found' });
 
-    // 🧠 Role update (if provided)
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: messages.auth.userNotFound,
+      });
+    }
+
+    // 🧠 Role update
     if (role && ['customer', 'provider', 'both'].includes(role)) {
       user.role = role;
     }
@@ -35,50 +62,69 @@ exports.updateProfile = async (req, res) => {
     if (pincode) user.pincode = pincode;
 
     // 📸 Profile Image
-    if (req.files?.profileImage) {
+    if (req.files?.profileImage?.[0]) {
+      if (user.profileImage) {
+        deleteOldFile(user.profileImage);
+      }
+
       user.profileImage =
         'providers/profile/' + req.files.profileImage[0].filename;
     }
 
-    // 🚨 STRICT VALIDATION for provider/both BEFORE saving
+    // 🛠 Provider validation
     if (user.role === 'provider' || user.role === 'both') {
-      // Basic provider fields always required
       if (!category || !experience || !about) {
         return res.status(400).json({
           success: false,
-          message: 'Provider details (category, experience, about) are required',
+          message: messages.provider.detailsRequired,
         });
       }
 
-      // Assign provider fields
+      const exp = Number(experience);
+
+      if (isNaN(exp) || exp < 0 || exp > 50) {
+        return res.status(400).json({
+          success: false,
+          message: messages.provider.invalidExperience,
+        });
+      }
+
       user.category = category;
-      user.experience = experience;
+      user.experience = exp;
       user.about = about;
 
-      // 🪪 Aadhaar Front (update only if new uploaded)
-      if (req.files?.aadharFrontImage) {
+      // 🪪 Aadhaar Front
+      if (req.files?.aadharFrontImage?.[0]) {
+        if (user.aadharFrontImage) {
+          deleteOldFile(user.aadharFrontImage);
+        }
+
         user.aadharFrontImage =
           'providers/aadhar/' + req.files.aadharFrontImage[0].filename;
       } else if (!user.aadharFrontImage) {
         return res.status(400).json({
           success: false,
-          message: 'Aadhaar front image is required',
+          message: messages.provider.aadharFrontRequired,
         });
       }
 
-      // 🪪 Aadhaar Back (update only if new uploaded)
-      if (req.files?.aadharBackImage) {
+      // 🪪 Aadhaar Back
+      if (req.files?.aadharBackImage?.[0]) {
+        if (user.aadharBackImage) {
+          deleteOldFile(user.aadharBackImage);
+        }
+
         user.aadharBackImage =
           'providers/aadhar/' + req.files.aadharBackImage[0].filename;
       } else if (!user.aadharBackImage) {
         return res.status(400).json({
           success: false,
-          message: 'Aadhaar back image is required',
+          message: messages.provider.aadharBackRequired,
         });
       }
     }
 
-    // 🔥 Completion Logic
+    // 🔥 User completion
     const isUserComplete =
       user.name &&
       user.village &&
@@ -89,6 +135,7 @@ exports.updateProfile = async (req, res) => {
 
     user.isUserProfileComplete = !!isUserComplete;
 
+    // 🛠 Provider completion
     if (user.role === 'provider' || user.role === 'both') {
       const isProviderComplete =
         isUserComplete &&
@@ -101,22 +148,28 @@ exports.updateProfile = async (req, res) => {
       user.isProviderProfileComplete = !!isProviderComplete;
     }
 
-    // 🎯 Unified profile completion flag for frontend flow
+    // 🎯 Unified completion flag
     if (user.role === 'customer') {
       user.profileDone = user.isUserProfileComplete;
-    } else if (user.role === 'provider' || user.role === 'both') {
+    } else {
       user.profileDone = user.isProviderProfileComplete;
     }
+
     await user.save();
 
-    res.json({
+    return res.json({
       success: true,
-      message: 'Profile updated successfully',
+      message: messages.user.profileUpdated,
       data: user,
     });
+
   } catch (error) {
     console.error('Update Profile Error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+
+    return res.status(500).json({
+      success: false,
+      message: messages.common.serverError,
+    });
   }
 };
 
@@ -128,7 +181,7 @@ exports.deleteAccount = async (req, res) => {
     if (!mobile) {
       return res.status(400).json({
         success: false,
-        message: 'Mobile number is required',
+        message: messages.auth.mobileRequired,
       });
     }
 
@@ -137,30 +190,35 @@ exports.deleteAccount = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found',
+        message: messages.auth.userNotFound,
       });
     }
 
-    // 🔐 Extra verification
     if (user.mobile !== mobile) {
       return res.status(400).json({
         success: false,
-        message: 'Mobile number does not match',
+        message: messages.user.mobileMismatch,
       });
     }
+
+    // 🔥 Delete images
+    if (user.profileImage) deleteOldFile(user.profileImage);
+    if (user.aadharFrontImage) deleteOldFile(user.aadharFrontImage);
+    if (user.aadharBackImage) deleteOldFile(user.aadharBackImage);
 
     await User.findByIdAndDelete(userId);
 
     return res.status(200).json({
       success: true,
-      message: 'Account deleted successfully',
+      message: messages.user.accountDeleted,
     });
 
   } catch (error) {
     console.error('Delete Account Error:', error);
+
     return res.status(500).json({
       success: false,
-      message: 'Failed to delete account',
+      message: messages.user.deleteFailed,
     });
   }
 };

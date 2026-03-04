@@ -121,7 +121,7 @@ const OtpScreen = ({ navigation, route }: any) => {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           enableOnAndroid
-          extraScrollHeight={30}
+          extraScrollHeight={50}
         >
           <View style={styles.container}>
             <AppHeaderLogo />

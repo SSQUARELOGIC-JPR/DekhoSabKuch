@@ -3,10 +3,13 @@ const router = express.Router();
 const authMiddleware = require('../middleware/auth.middleware');
 const { getProviders, getProviderById } = require('../controllers/provider.controller');
 
-// List
-router.get('/providers', authMiddleware, getProviders);
+// Apply auth middleware to all routes
+router.use(authMiddleware);
 
-// Detail
-router.get('/providers/:id', authMiddleware, getProviderById);
+// List Providers
+router.get('/', getProviders);
+
+// Provider Detail
+router.get('/:id', getProviderById);
 
 module.exports = router;
