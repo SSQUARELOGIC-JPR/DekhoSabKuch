@@ -259,6 +259,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 1,
     borderColor: Colors.border,
+    gap:1
   },
 
   item: {
