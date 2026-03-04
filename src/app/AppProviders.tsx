@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 type Props = {
   children: React.ReactNode;
@@ -7,9 +8,11 @@ type Props = {
 
 const AppProviders = ({ children }: Props) => {
   return (
-    <NavigationContainer>
-      {children}
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <NavigationContainer>
+        {children}
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 };
 

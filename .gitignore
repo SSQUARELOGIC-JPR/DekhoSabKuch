@@ -37,4 +37,11 @@ ios/DekhoSabKuch.xcworkspace/
 # Ruby / CocoaPods
 vendor/
 .bundle/
+ios/build/
+android/.cxx/
+android/build/
+android/app/build/
+# Android build files
+android/.cxx
 android/app/.cxx
+android/build

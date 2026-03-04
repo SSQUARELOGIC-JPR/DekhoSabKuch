@@ -1,334 +1,398 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  ImageBackground,
-  FlatList,
-  TouchableOpacity,
-  Switch,
   TextInput,
+  ScrollView,
+  StyleSheet,
+  Linking,
+  ActivityIndicator,
+  Image,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
-import Icon from 'react-native-vector-icons/Feather';
+import { useSelector } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
 
-import { Images } from '../constants/images';
 import { Colors } from '../theme/colors';
+import { Typography } from '../theme/typography';
+import CategoryList from '../components/CategoryList';
+import ProviderList from '../components/ProviderList';
+import AccessBlockModal from '../components/AccessBlockModal';
+import { Routes } from '../constants/routes';
+import { RootState } from '../store';
+import { useTranslation } from '../localization/useTranslation';
+import { translateDynamic } from '../localization/translateDynamic';
+import { getProvidersApi } from '../services/api';
+import { apiHandler } from '../utils/apiHandler';
+import { ENV } from '../config/env';
 
-type RoleType = 'customer' | 'provider' | 'both';
-type ModeType = 'user' | 'provider';
+const LIMIT = 20;
 
-// Dummy Categories (with icons)
-const categories = [
-  { id: '1', name: 'Plumber', icon: 'tool' },
-  { id: '2', name: 'Electrician', icon: 'zap' },
-  { id: '3', name: 'Carpenter', icon: 'box' },
-  { id: '4', name: 'Painter', icon: 'droplet' },
-];
+const HomeScreen = () => {
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
+  const user = useSelector((state: RootState) => state.auth.user);
+  const t = useTranslation();
 
-// Dummy Providers
-const providers = [
-  { id: '1', name: 'Ramesh Verma', service: 'Electrician', rating: 4.5 },
-  { id: '2', name: 'Suresh Kumar', service: 'Plumber', rating: 4.2 },
-  { id: '3', name: 'Vijay Sharma', service: 'Carpenter', rating: 4.8 },
-  { id: '4', name: 'Amit Singh', service: 'Electrician', rating: 4.1 },
-];
-
-const HomeScreen = ({ route }: any) => {
-  const role: RoleType = route?.params?.role || 'customer';
-  const [mode, setMode] = useState<ModeType>('user');
+  const [selectedCategory, setSelectedCategory] =
+    useState<string>('Electrician');
+  const [redirectTo, setRedirectTo] =
+    useState<'profile' | 'payment' | null>(null);
   const [search, setSearch] = useState('');
+  const [showBlocked, setShowBlocked] = useState(false);
 
-  const toggleMode = () => {
-    setMode(prev => (prev === 'user' ? 'provider' : 'user'));
+  const [providers, setProviders] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  // ===============================
+  // 📡 FETCH PROVIDERS
+  // ===============================
+  const fetchProviders = useCallback(
+    async (pageNumber: number) => {
+      if (loading || (!hasMore && pageNumber !== 1)) return;
+
+      setLoading(true);
+
+      const res = await apiHandler(() =>
+        getProvidersApi(pageNumber, LIMIT)
+      );
+
+      setLoading(false);
+
+      if (!res) return;
+
+      const newProviders = res?.providers || [];
+
+      setProviders(prev => {
+        const merged =
+          pageNumber === 1
+            ? newProviders
+            : [...prev, ...newProviders];
+
+        const uniqueMap = new Map();
+        merged.forEach((item: { _id: any; }) => {
+          uniqueMap.set(item._id, item);
+        });
+
+        return Array.from(uniqueMap.values());
+      });
+
+      setHasMore(newProviders.length === LIMIT);
+      setPage(pageNumber);
+    },
+    [loading, hasMore]
+  );
+
+  useEffect(() => {
+    fetchProviders(1);
+  }, []);
+
+  const loadMore = () => {
+    if (!loading && hasMore) {
+      fetchProviders(page + 1);
+    }
   };
 
-  const showToggle = role === 'both';
-  const isProviderOnly = role === 'provider';
+  // ===============================
+  // 🔐 ACCESS CONTROL
+  // ===============================
+  const checkAccess = () => {
+    if (!user?.profileDone) {
+      setRedirectTo('profile');
+      setShowBlocked(true);
+      return false;
+    }
 
-  // 🔍 Search Filter
-  const filteredProviders = useMemo(() => {
-    return providers.filter(
-      p =>
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
-        p.service.toLowerCase().includes(search.toLowerCase())
+    if (!user?.paymentDone) {
+      setRedirectTo('payment');
+      setShowBlocked(true);
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleCall = (phone: string) => {
+    if (!checkAccess()) return;
+    Linking.openURL(`tel:${phone}`);
+  };
+
+  const handleWhatsApp = (phone: string) => {
+    if (!checkAccess()) return;
+
+    const url = `whatsapp://send?phone=91${phone}`;
+    Linking.openURL(url).catch(() => {
+      Linking.openURL(`https://wa.me/91${phone}`);
+    });
+  };
+
+  const handleViewProfile = (provider: any) => {
+    if (!checkAccess()) return;
+    navigation.navigate(Routes.ProviderDetails, { provider });
+  };
+
+  // ===============================
+  // 🔎 FILTER LOGIC
+  // ===============================
+  const filteredProviders = providers.filter(item => {
+    const translatedCategory = translateDynamic(
+      item.category,
+      t.categories
     );
-  }, [search]);
 
-  // ================= HEADER =================
-  const Header = () => (
-    <View style={styles.header}>
-      <TouchableOpacity>
-        <Icon name="menu" size={24} color={Colors.white} />
-      </TouchableOpacity>
+    const matchCategory =
+      !selectedCategory ||
+      item.category === selectedCategory;
 
-      {!isProviderOnly && (
-        <Text style={styles.headerTitle}>
-          {mode === 'user' ? 'Find Services' : 'Provider Dashboard'}
+    const matchSearch =
+      item.name
+        .toLowerCase()
+        .includes(search.toLowerCase()) ||
+      item.category
+        .toLowerCase()
+        .includes(search.toLowerCase()) ||
+      translatedCategory
+        .toLowerCase()
+        .includes(search.toLowerCase());
+
+    return matchCategory && matchSearch;
+  });
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View
+        style={[
+          styles.topHeader,
+          { paddingTop: insets.top + verticalScale(6) },
+        ]}
+      >
+        <Text style={styles.greeting}>
+          {t.home.greeting}
         </Text>
-      )}
+        <Text style={styles.title}>
+          {t.home.title}
+        </Text>
 
-      {showToggle && (
-        <Switch
-          value={mode === 'provider'}
-          onValueChange={toggleMode}
-          trackColor={{ false: '#ccc', true: Colors.primary }}
-          thumbColor={Colors.white}
-        />
-      )}
-    </View>
-  );
-
-  // ================= SEARCH BAR =================
-  const SearchBar = () => (
-    <View style={styles.searchBox}>
-      <Icon name="search" size={18} color={Colors.textSecondary} />
-      <TextInput
-        placeholder="Search Plumber, Electrician..."
-        placeholderTextColor={Colors.textSecondary}
-        style={styles.searchInput}
-        value={search}
-        onChangeText={setSearch}
-      />
-    </View>
-  );
-
-  // ================= CATEGORY ITEM =================
-  const CategoryItem = ({ item }: any) => (
-    <TouchableOpacity style={styles.categoryChip}>
-      <Icon name={item.icon} size={18} color={Colors.primary} />
-      <Text style={styles.categoryText}>{item.name}</Text>
-    </TouchableOpacity>
-  );
-
-  // ================= PROVIDER CARD =================
-  const ProviderCard = ({ item }: any) => (
-    <View style={styles.card}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.name}>{item.name}</Text>
-        <Text style={styles.service}>{item.service}</Text>
-
-        <View style={styles.ratingRow}>
-          <Text style={styles.rating}>⭐ {item.rating}</Text>
-          <Text style={styles.distance}>• 2 km</Text>
+        <View style={styles.searchBar}>
+          <Icon
+            name="search"
+            size={moderateScale(18)}
+            color={Colors.textPlaceholder}
+          />
+          <TextInput
+            placeholder={t.home.searchPlaceholder}
+            placeholderTextColor={Colors.textPlaceholder}
+            style={styles.searchInput}
+            value={search}
+            onChangeText={setSearch}
+          />
         </View>
       </View>
 
-      <View style={styles.actionRow}>
-        <TouchableOpacity style={styles.callBtn}>
-          <Icon name="phone" size={16} color="#fff" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.whatsappBtn}>
-          <Icon name="message-circle" size={16} color="#fff" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  // ================= USER MODE UI =================
-  const UserHome = () => (
-    <>
-      <SearchBar />
-
-      <FlatList
-        data={categories}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={item => item.id}
-        renderItem={CategoryItem}
-        contentContainerStyle={{ marginVertical: verticalScale(15) }}
-      />
-
-      <FlatList
-        data={filteredProviders}
-        keyExtractor={item => item.id}
-        renderItem={ProviderCard}
+      <ScrollView
         showsVerticalScrollIndicator={false}
+        onScroll={({ nativeEvent }) => {
+          const { layoutMeasurement, contentOffset, contentSize } =
+            nativeEvent;
+
+          const isEndReached =
+            layoutMeasurement.height +
+              contentOffset.y >=
+            contentSize.height - 20;
+
+          if (isEndReached) loadMore();
+        }}
+        scrollEventThrottle={400}
+      >
+        {/* Categories */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            {t.home.categories}
+          </Text>
+
+          <CategoryList
+            selected={selectedCategory}
+            onSelect={setSelectedCategory}
+          />
+        </View>
+
+        {/* Featured */}
+        {filteredProviders.length > 0 && (
+          <View style={styles.featuredCard}>
+            <View>
+              <Text style={styles.featuredTitle}>
+                {t.home.topRated}
+              </Text>
+
+              <Text style={styles.featuredName}>
+                {filteredProviders[0]?.name}
+              </Text>
+
+              <Text style={styles.featuredCategory}>
+                {translateDynamic(
+                  selectedCategory,
+                  t.categories
+                )}
+              </Text>
+            </View>
+
+            <View style={styles.featuredAvatar}>
+              {filteredProviders[0]?.profileImage ? (
+                <Image
+                  source={{
+                    uri:
+                      ENV.IMAGE_BASE_URL +
+                      'uploads/' +
+                      filteredProviders[0]
+                        .profileImage,
+                  }}
+                  style={styles.featuredAvatar}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Icon
+                  name="person"
+                  size={moderateScale(24)}
+                  color={Colors.white}
+                />
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* Provider List */}
+        <ProviderList
+          data={filteredProviders}
+          onCall={handleCall}
+          onMessage={handleWhatsApp}
+          onViewProfile={handleViewProfile}
+        />
+
+        {loading && (
+          <ActivityIndicator
+            size="large"
+            color={Colors.primary}
+            style={{ marginVertical: 20 }}
+          />
+        )}
+      </ScrollView>
+
+      {/* Access Block Modal */}
+      <AccessBlockModal
+        visible={showBlocked}
+        title={t.profile.title}
+        subtitle={
+          redirectTo === 'profile'
+            ? t.profile.blockSubtitle
+            : t.payment.blockSubtitle
+        }
+        laterText={t.profile.later}
+        okText={t.profile.completeNow}
+        onClose={() => setShowBlocked(false)}
+        onOk={() => {
+          setShowBlocked(false);
+
+          if (redirectTo === 'profile') {
+            navigation.navigate(Routes.Profile);
+          } else if (redirectTo === 'payment') {
+            navigation.navigate(Routes.Payment);
+          }
+        }}
       />
-    </>
-  );
-
-  // ================= PROVIDER DASHBOARD =================
-  const ProviderDashboard = () => (
-    <View style={styles.dashboard}>
-      <Text style={styles.dashboardTitle}>Provider Dashboard</Text>
-
-      <View style={styles.infoBox}>
-        <Text style={styles.infoLabel}>Plan Active Till</Text>
-        <Text style={styles.infoValue}>25 May 2024</Text>
-      </View>
-
-      <View style={styles.infoBox}>
-        <Text style={styles.infoLabel}>Total Leads</Text>
-        <Text style={styles.infoValue}>12</Text>
-      </View>
-
-      <View style={styles.infoBox}>
-        <Text style={styles.infoLabel}>Rating</Text>
-        <Text style={styles.infoValue}>4.5 ⭐</Text>
-      </View>
     </View>
-  );
-
-  return (
-    <ImageBackground source={Images.splashBg} style={styles.bg}>
-      <SafeAreaView style={styles.container}>
-        <Header />
-
-        {/* CONTENT LOGIC */}
-        {role === 'provider' && <ProviderDashboard />}
-        {role === 'customer' && <UserHome />}
-        {role === 'both' &&
-          (mode === 'user' ? <UserHome /> : <ProviderDashboard />)}
-      </SafeAreaView>
-    </ImageBackground>
   );
 };
 
 export default HomeScreen;
 
 const styles = StyleSheet.create({
-  bg: { flex: 1 },
+  container: { flex: 1, backgroundColor: Colors.backgroundAlt },
 
-  container: {
-    flex: 1,
-    paddingHorizontal: moderateScale(20),
-    paddingTop: verticalScale(10),
+  topHeader: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: moderateScale(14),
+    paddingBottom: verticalScale(14),
+    borderBottomLeftRadius: moderateScale(20),
+    borderBottomRightRadius: moderateScale(20),
   },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  greeting: {
+    color: Colors.white,
+    ...Typography.subtitle,
+  },
+
+  title: {
+    color: Colors.white,
+    ...Typography.title,
     marginBottom: verticalScale(10),
   },
 
-  headerTitle: {
-    fontSize: moderateScale(18),
-    fontWeight: '700',
-    color: Colors.white,
-  },
-
-  searchBox: {
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.white,
-    borderRadius: moderateScale(10),
+    borderRadius: moderateScale(12),
     paddingHorizontal: moderateScale(12),
-    height: moderateScale(45),
+    height: verticalScale(42),
   },
 
   searchInput: {
+    marginLeft: moderateScale(6),
     flex: 1,
-    marginLeft: moderateScale(8),
     color: Colors.textPrimary,
   },
 
-  categoryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.white,
-    borderRadius: moderateScale(20),
-    paddingHorizontal: moderateScale(16),
-    paddingVertical: verticalScale(8),
-    marginRight: moderateScale(10),
-    gap: moderateScale(6),
-    elevation: 3,
+  section: {
+    marginTop: verticalScale(12),
+    paddingLeft: moderateScale(14),
   },
 
-  categoryText: {
-    fontSize: moderateScale(13),
-    fontWeight: '600',
+  sectionTitle: {
+    ...Typography.subtitle,
+    fontWeight: '700',
     color: Colors.textPrimary,
+    marginBottom: verticalScale(8),
   },
 
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.white,
-    borderRadius: moderateScale(12),
+  featuredCard: {
+    margin: moderateScale(14),
+    backgroundColor: Colors.primary,
+    borderRadius: moderateScale(16),
     padding: moderateScale(14),
-    marginBottom: verticalScale(12),
-    elevation: 3,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
 
-  name: {
-    fontSize: moderateScale(16),
-    fontWeight: '600',
-    color: Colors.textPrimary,
+  featuredTitle: {
+    color: Colors.primarySoft,
+    ...Typography.small,
   },
 
-  service: {
-    fontSize: moderateScale(13),
-    color: Colors.textSecondary,
+  featuredName: {
+    color: Colors.white,
+    ...Typography.subtitle,
+    fontWeight: '700',
     marginTop: verticalScale(2),
   },
 
-  ratingRow: {
-    flexDirection: 'row',
+  featuredCategory: {
+    color: Colors.primarySoft2,
+    marginTop: verticalScale(1),
+    ...Typography.small,
+  },
+
+  featuredAvatar: {
+    width: moderateScale(46),
+    height: moderateScale(46),
+    borderRadius: moderateScale(23),
+    backgroundColor: Colors.primaryCard,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: verticalScale(4),
-  },
-
-  rating: {
-    fontSize: moderateScale(13),
-    color: Colors.primary,
-    fontWeight: '600',
-  },
-
-  distance: {
-    marginLeft: moderateScale(6),
-    fontSize: moderateScale(12),
-    color: Colors.textSecondary,
-  },
-
-  actionRow: {
-    flexDirection: 'row',
-    gap: moderateScale(8),
-  },
-
-  callBtn: {
-    backgroundColor: '#2ecc71',
-    padding: moderateScale(8),
-    borderRadius: moderateScale(8),
-  },
-
-  whatsappBtn: {
-    backgroundColor: '#25D366',
-    padding: moderateScale(8),
-    borderRadius: moderateScale(8),
-  },
-
-  dashboard: {
-    marginTop: verticalScale(20),
-    gap: verticalScale(14),
-  },
-
-  dashboardTitle: {
-    fontSize: moderateScale(18),
-    fontWeight: '700',
-    color: Colors.white,
-    textAlign: 'center',
-    marginBottom: verticalScale(10),
-  },
-
-  infoBox: {
-    backgroundColor: Colors.white,
-    borderRadius: moderateScale(12),
-    padding: moderateScale(16),
-  },
-
-  infoLabel: {
-    fontSize: moderateScale(13),
-    color: Colors.textSecondary,
-  },
-
-  infoValue: {
-    fontSize: moderateScale(16),
-    fontWeight: '600',
-    color: Colors.primary,
-    marginTop: verticalScale(4),
   },
 });

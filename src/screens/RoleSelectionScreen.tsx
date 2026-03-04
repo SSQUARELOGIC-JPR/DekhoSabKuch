@@ -9,26 +9,61 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Feather';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
+import { useDispatch } from 'react-redux';
 
 import { Images } from '../constants/images';
 import { Colors } from '../theme/colors';
 import { AppButton } from '../components/AppButton';
-import { Routes } from '../constants/routes';
-import { Strings } from '../constants/strings';
 import AppHeaderLogo from '../components/AppHeaderLogo';
+import { loginSuccess } from '../store/authSlice';
+import { openSessionExpired } from '../store/sessionSlice';
 
 import {
   RoleType,
   RoleCardProps,
   RoleSelectionScreenProps,
+  AuthUser,
 } from '../types/interfaces';
+import { useTranslation } from '../localization/useTranslation';
 
-const RoleSelectionScreen = ({ navigation }: RoleSelectionScreenProps) => {
+const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({
+  route,
+}) => {
   const [role, setRole] = useState<RoleType>(null);
+  const dispatch = useDispatch();
+  const t = useTranslation();
+
+  const mobile = route?.params?.mobile ?? '';
+  const token = route?.params?.token ?? '';
+  const userFromApi = route?.params?.user;
 
   const handleContinue = () => {
     if (!role) return;
-    navigation.navigate(Routes.Profile, { role })
+
+    // 🔐 Defensive session check
+    if (!mobile || !token || !userFromApi) {
+      dispatch(openSessionExpired());
+      return;
+    }
+
+    const userData: AuthUser = {
+      ...userFromApi,
+      mobile,
+      role,
+      profileDone: userFromApi.profileDone ?? false,
+      paymentDone: userFromApi.paymentDone ?? false,
+      isUserProfileComplete:
+        userFromApi.isUserProfileComplete ?? false,
+      isProviderProfileComplete:
+        userFromApi.isProviderProfileComplete ?? false,
+    };
+
+    dispatch(
+      loginSuccess({
+        user: userData,
+        token,
+      })
+    );
   };
 
   const RoleCard = ({
@@ -64,22 +99,22 @@ const RoleSelectionScreen = ({ navigation }: RoleSelectionScreenProps) => {
 
         <View style={styles.middle}>
           <RoleCard
-            title={Strings.roleSelection.findServicesTitle}
-            description={Strings.roleSelection.findServicesDesc}
+            title={t.roleSelection.findServicesTitle}
+            description={t.roleSelection.findServicesDesc}
             icon="search"
             value="customer"
           />
 
           <RoleCard
-            title={Strings.roleSelection.provideServicesTitle}
-            description={Strings.roleSelection.provideServicesDesc}
+            title={t.roleSelection.provideServicesTitle}
+            description={t.roleSelection.provideServicesDesc}
             icon="briefcase"
             value="provider"
           />
 
           <RoleCard
-            title={Strings.roleSelection.bothTitle}
-            description={Strings.roleSelection.bothDesc}
+            title={t.roleSelection.bothTitle}
+            description={t.roleSelection.bothDesc}
             icon="repeat"
             value="both"
           />
@@ -87,7 +122,7 @@ const RoleSelectionScreen = ({ navigation }: RoleSelectionScreenProps) => {
 
         <View style={styles.bottom}>
           <AppButton
-            title="Continue"
+            title={t.common.continue}
             onPress={handleContinue}
             disabled={!role}
           />
