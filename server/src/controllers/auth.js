@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const messages = require('../constants/messages');
+const createNotification = require('../../utills/createNotification');
 
 // In-memory OTP store (dev only)
 const otpStore = new Map();
@@ -92,10 +93,12 @@ exports.verifyOtp = async (req, res) => {
 
     // 🔍 Check if user exists
     let user = await User.findOne({ mobile });
+    let isNewUser = false;
 
     // 👤 Create user if not exists
     if (!user) {
       user = await User.create({ mobile });
+      isNewUser = true;
     }
 
     // 🔐 Ensure JWT secret exists
@@ -110,6 +113,14 @@ exports.verifyOtp = async (req, res) => {
       { expiresIn: '30d' }
     );
 
+    if (isNewUser) {
+      await createNotification({
+        user: user._id,
+        title: messages.notification.welcomeTitle,
+        message: messages.notification.welcomeMessage,
+        type: "login",
+      });
+    }
     res.json({
       success: true,
       message: messages.auth.loginSuccess,

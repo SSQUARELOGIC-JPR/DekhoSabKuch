@@ -45,5 +45,18 @@ module.exports = {
   support: {
     fieldsRequired: "All fields are required",
     created: "Support ticket created successfully"
-  }
+  },
+  notification: {
+    welcomeTitle: "Welcome 🎉",
+    welcomeMessage: "Welcome to Dekho Sab Kuch!",
+
+    paymentTitle: "Payment Successful",
+    paymentMessage: "Your payment was completed successfully.",
+
+    supportTitle: "Support Request Submitted",
+    supportMessage: "Your support ticket has been received. Our team will contact you soon.",
+
+    providerLiveTitle: "Profile Live 🎉",
+    providerLiveMessage: "Your provider profile is now live and visible to customers.",
+  },
 };

@@ -162,5 +162,32 @@ export default {
     noInternet: "No internet connection.",
     connectionIssue: 'Unable to connect. Please check your internet connection.',
     somethingWrong: 'Something went wrong.',
+  },
+  notifications: {
+    title: "Notifications",
+    empty: "No notifications yet",
+
+    types: {
+      login: "Welcome",
+      payment: "Payment Successful",
+      support: "Support Request",
+      provider_live: "Profile Live",
+    },
+
+    messages: {
+      welcome: "Welcome to our platform",
+      payment_success: "Your payment was completed successfully",
+      support_created: "Your support ticket has been created",
+      profile_live: "Your provider profile is now live",
+    },
+
+    time: {
+      just_now: "Just now",
+      min_ago: "{{count}} min ago",
+      hour_ago: "{{count}} hour ago",
+      hours_ago: "{{count}} hours ago",
+      yesterday: "Yesterday",
+      days_ago: "{{count}} days ago",
+    }
   }
 };

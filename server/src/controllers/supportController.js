@@ -1,5 +1,6 @@
 const SupportTicket = require('../models/SupportTicket');
 const messages = require('../constants/messages');
+const createNotification = require('../../utills/createNotification')
 
 exports.createSupportTicket = async (req, res) => {
   try {
@@ -20,6 +21,13 @@ exports.createSupportTicket = async (req, res) => {
       type,
       summary,
       description,
+    });
+
+    await createNotification({
+      user: userId,
+      title: messages.notification.supportTitle,
+      message: messages.notification.supportMessage,
+      type: "support",
     });
 
     return res.status(201).json({

@@ -125,3 +125,34 @@ export const deleteAccountApi = async (mobile: string) => {
     throw error;
   }
 };
+
+
+// Get all notifications
+export const getNotificationsApi = async () => {
+  try {
+    const res = await instance.get('/notifications');
+    return res.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Get unread notification count
+export const getUnreadCountApi = async () => {
+  try {
+    const res = await instance.get('/notifications/unread-count');
+    return res.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Mark notification as read
+export const markNotificationReadApi = async (id: string) => {
+  try {
+    const res = await instance.put(`/notifications/read/${id}`);
+    return res.data;
+  } catch (error) {
+    throw error;
+  }
+};

@@ -161,5 +161,32 @@ export default {
     noInternet: "इंटरनेट कनेक्शन उपलब्ध नहीं है।",
     connectionIssue: 'कनेक्शन में समस्या है। कृपया अपना इंटरनेट चेक करें।',
     somethingWrong: 'कुछ गलत हो गया।',
+  },
+  notifications: {
+    title: "सूचनाएँ",
+    empty: "अभी कोई सूचना नहीं है",
+
+    types: {
+      login: "स्वागत है",
+      payment: "भुगतान सफल",
+      support: "सहायता अनुरोध",
+      provider_live: "प्रोफ़ाइल लाइव",
+    },
+
+    messages: {
+      welcome: "हमारे प्लेटफॉर्म पर आपका स्वागत है",
+      payment_success: "आपका भुगतान सफलतापूर्वक पूरा हो गया",
+      support_created: "आपका सपोर्ट टिकट बना दिया गया है",
+      profile_live: "आपकी प्रोवाइडर प्रोफ़ाइल अब लाइव है",
+    },
+
+    time: {
+      just_now: "अभी",
+      min_ago: "{{count}} मिनट पहले",
+      hour_ago: "{{count}} घंटा पहले",
+      hours_ago: "{{count}} घंटे पहले",
+      yesterday: "कल",
+      days_ago: "{{count}} दिन पहले",
+    }
   }
 };

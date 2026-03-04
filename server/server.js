@@ -13,7 +13,7 @@ const providerRoutes = require("./src/routes/provider.routes");
 const userRoutes = require("./src/routes/user.routes");
 const paymentRoutes = require("./src/routes/payment.routes");
 const supportRoutes = require("./src/routes/supportRoutes");
-
+const notificationRoutes = require("./src/routes/notification.routes")
 // Config
 dotenv.config();
 connectDB();
@@ -43,6 +43,7 @@ app.use("/api/providers", providerRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/support", supportRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Listen
 const PORT = process.env.PORT || 3005;

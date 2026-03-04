@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const messages = require('../constants/messages');
+const createNotification = require('../../utills/createNotification')
 
 exports.paymentSuccess = async (req, res) => {
   try {
@@ -70,6 +71,22 @@ exports.paymentSuccess = async (req, res) => {
           user.paymentDone,
       },
     });
+
+    await createNotification({
+      user: user._id,
+      title: messages.notification.paymentTitle,
+      message: messages.notification.paymentMessage,
+      type: "payment",
+    });
+
+    if (user.role === 'provider' || user.role === 'both') {
+      await createNotification({
+        user: user._id,
+        title: messages.notification.providerLiveTitle,
+        message: messages.notification.providerLiveMessage,
+        type: "provider_live",
+      });
+    }
 
   } catch (error) {
     console.error('Payment Error:', error);

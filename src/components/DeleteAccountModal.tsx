@@ -13,6 +13,7 @@ import { Typography } from '../theme/typography';
 import { useTranslation } from '../localization/useTranslation';
 import { DeleteAccountModalProps } from '../types/interfaces';
 import FormField from '../components/FormField';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
   visible,
@@ -31,51 +32,58 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
 
   return (
     <Modal transparent visible={visible} animationType="fade">
-      <View style={styles.overlay}>
-        <View style={styles.box}>
-          <Text style={styles.title}>
-            {t.settings.delete_title}
-          </Text>
+      <KeyboardAwareScrollView
+        enableOnAndroid
+        keyboardShouldPersistTaps="handled"
+        extraScrollHeight={80}
+        contentContainerStyle={{ flexGrow: 1 }}
+      >
+        <View style={styles.overlay}>
+          <View style={styles.box}>
+            <Text style={styles.title}>
+              {t.settings.delete_title}
+            </Text>
 
-          <Text style={styles.subtitle}>
-            {t.settings.delete_subtitle}
-          </Text>
+            <Text style={styles.subtitle}>
+              {t.settings.delete_subtitle}
+            </Text>
 
-          {/* Common FormField */}
-          <FormField
-            icon="phone"
-            placeholder={t.settings.enter_phone}
-            value={enteredPhone}
-            onChangeText={(val) =>
-              setEnteredPhone(val.replace(/[^0-9]/g, ''))
-            }
-            keyboardType="number-pad"
-            maxLength={10}
-          />
+            {/* Common FormField */}
+            <FormField
+              icon="phone"
+              placeholder={t.settings.enter_phone}
+              value={enteredPhone}
+              onChangeText={(val) =>
+                setEnteredPhone(val.replace(/[^0-9]/g, ''))
+              }
+              keyboardType="number-pad"
+              maxLength={10}
+            />
 
-          <View style={styles.row}>
-            <TouchableOpacity
-              style={styles.cancelBtn}
-              onPress={onClose}>
-              <Text style={styles.cancelText}>
-                {t.common.cancel}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.row}>
+              <TouchableOpacity
+                style={styles.cancelBtn}
+                onPress={onClose}>
+                <Text style={styles.cancelText}>
+                  {t.common.cancel}
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.deleteBtn,
-                !isValid && styles.deleteDisabled,
-              ]}
-              disabled={!isValid}
-              onPress={onConfirm}>
-              <Text style={styles.deleteText}>
-                {t.settings.delete}
-              </Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.deleteBtn,
+                  !isValid && styles.deleteDisabled,
+                ]}
+                disabled={!isValid}
+                onPress={onConfirm}>
+                <Text style={styles.deleteText}>
+                  {t.settings.delete}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </View>
+      </KeyboardAwareScrollView>
     </Modal>
   );
 };
