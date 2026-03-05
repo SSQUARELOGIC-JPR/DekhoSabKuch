@@ -23,86 +23,117 @@ const ProviderList: React.FC<ProviderListProps> = ({
   onCall,
   onMessage,
   onViewProfile,
+  currentUserId,
 }) => {
   const t = useTranslation();
 
-  const renderItem = ({ item }: { item: Provider }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => onViewProfile?.(item) || onBlockedPress?.()}
-    >
-      {/* Avatar */}
-      <View style={styles.avatar}>
-        {item.profileImage ? (
-          <Image
-            source={{ uri: ENV.IMAGE_BASE_URL + 'uploads/' + item.profileImage }}
-            style={styles.avatarImg}
-            resizeMode="cover"
-          />
-        ) : (
-          <Icon name="person" size={moderateScale(20)} color={Colors.white} />
-        )}
-      </View>
+  const renderItem = ({ item }: { item: Provider }) => {
+    const isSelf = item._id === currentUserId;
 
-      {/* Info */}
-      <View style={styles.info}>
-        <Text style={styles.name}>{item.name}</Text>
-
-        {/* 🔥 Dynamic category with fallback */}
-        <Text style={styles.category}>
-          {translateDynamic(item.category, t.categories)}
-        </Text>
-
-        <StarRating rating={item.rating} />
-
-        <View style={styles.metaRow}>
-          <Icon
-            name="location-outline"
-            size={moderateScale(13)}
-            color={Colors.textSecondary}
-          />
-          <Text style={styles.metaText}>{item.city}</Text>
-        </View>
-      </View>
-
-      {/* Right Column */}
-      <View style={styles.rightColumn}>
-        {/* Arrow */}
-        <TouchableOpacity
-          onPress={() => onViewProfile?.(item) || onBlockedPress?.()}
-        >
-          <Icon
-            name="chevron-forward"
-            size={moderateScale(20)}
-            color={Colors.textSecondary}
-          />
-        </TouchableOpacity>
-
-        {/* Call & Chat */}
-        <View style={styles.actionsRow}>
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() =>
-              onCall ? onCall(item.phone as any) : onBlockedPress?.()
-            }>
-            <Icon name="call" size={moderateScale(15)} color={Colors.primary} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() =>
-              onMessage ? onMessage(item.phone as any) : onBlockedPress?.()
-            }>
+    return (
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => onViewProfile?.(item) || onBlockedPress?.()}
+      >
+        {/* Avatar */}
+        <View style={styles.avatar}>
+          {item.profileImage ? (
+            <Image
+              source={{
+                uri:
+                  ENV.IMAGE_BASE_URL +
+                  'uploads/' +
+                  item.profileImage,
+              }}
+              style={styles.avatarImg}
+              resizeMode="cover"
+            />
+          ) : (
             <Icon
-              name="logo-whatsapp"
-              size={moderateScale(15)}
-              color={Colors.primary}
+              name="person"
+              size={moderateScale(20)}
+              color={Colors.white}
+            />
+          )}
+        </View>
+
+        {/* Info */}
+        <View style={styles.info}>
+          <View style={styles.nameRow}>
+            <Text style={styles.name}>{item.name}</Text>
+
+            {isSelf && (
+              <View style={styles.youBadge}>
+                <Text style={styles.youText}>YOU</Text>
+              </View>
+            )}
+          </View>
+
+          <Text style={styles.category}>
+            {translateDynamic(item.category, t.categories)}
+          </Text>
+
+          <StarRating rating={item.rating} />
+
+          <View style={styles.metaRow}>
+            <Icon
+              name="location-outline"
+              size={moderateScale(13)}
+              color={Colors.textSecondary}
+            />
+            <Text style={styles.metaText}>{item.city}</Text>
+          </View>
+        </View>
+
+        {/* Right Column */}
+        <View style={styles.rightColumn}>
+          {/* Arrow */}
+          <TouchableOpacity
+            onPress={() => onViewProfile?.(item) || onBlockedPress?.()}
+          >
+            <Icon
+              name="chevron-forward"
+              size={moderateScale(20)}
+              color={Colors.textSecondary}
             />
           </TouchableOpacity>
+
+          {/* Call & Chat */}
+          <View style={styles.actionsRow}>
+            <TouchableOpacity
+              style={styles.iconBtn}
+              onPress={() =>
+                onCall
+                  ? onCall(item.phone as any, item._id)
+                  : onBlockedPress?.()
+              }
+            >
+              <Icon
+                name="call"
+                size={moderateScale(15)}
+                color={Colors.primary}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.iconBtn}
+              onPress={() =>
+                onMessage
+                  ? onMessage(item.phone as any, item._id)
+                  : onBlockedPress?.()
+              }
+            >
+              <Icon
+                name="logo-whatsapp"
+                size={moderateScale(15)}
+                color={Colors.primary}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <FlatList
@@ -152,15 +183,40 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
+  avatarImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: moderateScale(10),
+  },
+
   info: {
     flex: 1,
     paddingRight: moderateScale(60),
+  },
+
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: moderateScale(6),
   },
 
   name: {
     ...Typography.subtitle,
     fontWeight: '700',
     color: Colors.textPrimary,
+  },
+
+  youBadge: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: moderateScale(6),
+    paddingVertical: verticalScale(1),
+    borderRadius: moderateScale(6),
+  },
+
+  youText: {
+    fontSize: moderateScale(9),
+    color: Colors.white,
+    fontWeight: '700',
   },
 
   category: {
@@ -210,10 +266,5 @@ const styles = StyleSheet.create({
     marginTop: verticalScale(20),
     color: Colors.textSecondary,
     ...Typography.small,
-  },
-  avatarImg: {
-    width: '100%',
-    height: '100%',
-    borderRadius: moderateScale(10),
   },
 });

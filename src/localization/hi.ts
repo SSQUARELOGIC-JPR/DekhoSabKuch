@@ -9,6 +9,9 @@ export default {
     front: 'फ्रंट',
     back: 'बैक',
     notAvailable: 'उपलब्ध नहीं है',
+    selfActionTitle: "यह आप ही हैं",
+    selfActionSubtitle:
+      "यह आपकी अपनी प्रोवाइडर प्रोफाइल है। आप खुद को कॉल या मैसेज नहीं कर सकते।",
   },
 
   settings: {
@@ -82,11 +85,11 @@ export default {
     addressDetails: 'पता संबंधी जानकारी',
     professionalDetails: 'पेशेवर जानकारी',
     mobileNumber: 'मोबाइल नंबर',
-    village: 'गाँव',
-    tehsil: 'तहसील',
+    village: 'बिल्डिंग / मोहल्ला / गाँव',
+    tehsil: 'एरिया / तहसील',
     category: 'सेवा श्रेणी (जैसे: इलेक्ट्रीशियन)',
     experience: 'अनुभव (सालों में)',
-    aboutService: 'अपनी सेवा के बारे में लिखें',
+    aboutService: 'सेवा का विवरण लिखें (कम से कम 30 अक्षर)',
   },
   categories: {
     electrician: 'इलेक्ट्रीशियन',

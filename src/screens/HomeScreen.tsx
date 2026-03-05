@@ -27,6 +27,7 @@ import { translateDynamic } from '../localization/translateDynamic';
 import { getProvidersApi } from '../services/api';
 import { apiHandler } from '../utils/apiHandler';
 import { ENV } from '../config/env';
+import StarRating from '../components/StarRating';
 
 const LIMIT = 20;
 
@@ -36,32 +37,44 @@ const HomeScreen = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const t = useTranslation();
 
-  const [selectedCategory, setSelectedCategory] =
-    useState<string>('Electrician');
+  const [selectedCategory, setSelectedCategory] = useState('Electrician');
+
   const [redirectTo, setRedirectTo] =
     useState<'profile' | 'payment' | null>(null);
+
   const [search, setSearch] = useState('');
   const [showBlocked, setShowBlocked] = useState(false);
+
+  const [showSelfModal, setShowSelfModal] = useState(false);
 
   const [providers, setProviders] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // ===============================
-  // 📡 FETCH PROVIDERS
+  // FETCH PROVIDERS
   // ===============================
   const fetchProviders = useCallback(
     async (pageNumber: number) => {
-      if (loading || (!hasMore && pageNumber !== 1)) return;
+      if (loading || loadingMore || (!hasMore && pageNumber !== 1)) return;
 
-      setLoading(true);
+      if (pageNumber === 1) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
 
       const res = await apiHandler(() =>
-        getProvidersApi(pageNumber, LIMIT)
+        getProvidersApi(pageNumber, LIMIT),
       );
 
-      setLoading(false);
+      if (pageNumber === 1) {
+        setLoading(false);
+      } else {
+        setLoadingMore(false);
+      }
 
       if (!res) return;
 
@@ -74,7 +87,8 @@ const HomeScreen = () => {
             : [...prev, ...newProviders];
 
         const uniqueMap = new Map();
-        merged.forEach((item: { _id: any; }) => {
+
+        merged.forEach((item: { _id: any }) => {
           uniqueMap.set(item._id, item);
         });
 
@@ -84,7 +98,7 @@ const HomeScreen = () => {
       setHasMore(newProviders.length === LIMIT);
       setPage(pageNumber);
     },
-    [loading, hasMore]
+    [loading, loadingMore, hasMore],
   );
 
   useEffect(() => {
@@ -98,7 +112,7 @@ const HomeScreen = () => {
   };
 
   // ===============================
-  // 🔐 ACCESS CONTROL
+  // ACCESS CONTROL
   // ===============================
   const checkAccess = () => {
     if (!user?.profileDone) {
@@ -116,15 +130,31 @@ const HomeScreen = () => {
     return true;
   };
 
-  const handleCall = (phone: string) => {
+  const isSelfProvider = (providerId: string) => {
+    return (user as any)?._id === providerId;
+  };
+
+  const handleCall = (phone: string, providerId: string) => {
     if (!checkAccess()) return;
+
+    if (isSelfProvider(providerId)) {
+      setShowSelfModal(true);
+      return;
+    }
+
     Linking.openURL(`tel:${phone}`);
   };
 
-  const handleWhatsApp = (phone: string) => {
+  const handleWhatsApp = (phone: string, providerId: string) => {
     if (!checkAccess()) return;
 
+    if (isSelfProvider(providerId)) {
+      setShowSelfModal(true);
+      return;
+    }
+
     const url = `whatsapp://send?phone=91${phone}`;
+
     Linking.openURL(url).catch(() => {
       Linking.openURL(`https://wa.me/91${phone}`);
     });
@@ -132,39 +162,70 @@ const HomeScreen = () => {
 
   const handleViewProfile = (provider: any) => {
     if (!checkAccess()) return;
+
     navigation.navigate(Routes.ProviderDetails, { provider });
   };
 
   // ===============================
-  // 🔎 FILTER LOGIC
+  // FILTER
   // ===============================
+  // const filteredProviders = providers.filter(item => {
+  //   const translatedCategory = translateDynamic(
+  //     item.category,
+  //     t.categories,
+  //   );
+
+  //   const matchCategory =
+  //     !selectedCategory ||
+  //     item.category === selectedCategory;
+
+  //   const matchSearch =
+  //     item.name
+  //       .toLowerCase()
+  //       .includes(search.toLowerCase()) ||
+  //     item.category
+  //       .toLowerCase()
+  //       .includes(search.toLowerCase()) ||
+  //     translatedCategory
+  //       .toLowerCase()
+  //       .includes(search.toLowerCase());
+
+  //   return matchCategory && matchSearch;
+  // });
+
+  const normalize = (text: string = '') =>
+    text.toLowerCase().replace(/\s+/g, ' ').trim();
+
   const filteredProviders = providers.filter(item => {
     const translatedCategory = translateDynamic(
       item.category,
-      t.categories
+      t.categories,
     );
 
-    const matchCategory =
-      !selectedCategory ||
-      item.category === selectedCategory;
-
     const matchSearch =
-      item.name
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      item.category
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      translatedCategory
-        .toLowerCase()
-        .includes(search.toLowerCase());
+      normalize(item.name).includes(normalize(search)) ||
+      normalize(item.category).includes(normalize(search)) ||
+      normalize(translatedCategory).includes(normalize(search));
 
-    return matchCategory && matchSearch;
+    // search active → global search
+    if (search.trim().length > 0) {
+      return matchSearch;
+    }
+
+    // category filter only after user selection
+    if (selectedCategory) {
+      return normalize(item.category) === normalize(selectedCategory);
+    }
+
+    return true;
   });
+  const topRatedProvider = [...filteredProviders].sort(
+    (a, b) => (b.rating || 0) - (a.rating || 0),
+  )[0];
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* HEADER */}
       <View
         style={[
           styles.topHeader,
@@ -174,6 +235,7 @@ const HomeScreen = () => {
         <Text style={styles.greeting}>
           {t.home.greeting}
         </Text>
+
         <Text style={styles.title}>
           {t.home.title}
         </Text>
@@ -184,6 +246,7 @@ const HomeScreen = () => {
             size={moderateScale(18)}
             color={Colors.textPlaceholder}
           />
+
           <TextInput
             placeholder={t.home.searchPlaceholder}
             placeholderTextColor={Colors.textPlaceholder}
@@ -201,9 +264,8 @@ const HomeScreen = () => {
             nativeEvent;
 
           const isEndReached =
-            layoutMeasurement.height +
-              contentOffset.y >=
-            contentSize.height - 20;
+            layoutMeasurement.height + contentOffset.y >=
+            contentSize.height - 120;
 
           if (isEndReached) loadMore();
         }}
@@ -217,42 +279,46 @@ const HomeScreen = () => {
 
           <CategoryList
             selected={selectedCategory}
-            onSelect={setSelectedCategory}
+            onSelect={(category) => {
+              setSelectedCategory(category);
+              setSearch('');
+            }}
           />
         </View>
 
-        {/* Featured */}
-        {filteredProviders.length > 0 && (
+        {/* TOP RATED SECTION */}
+        {topRatedProvider && (
           <View style={styles.featuredCard}>
             <View>
-              <Text style={styles.featuredTitle}>
-                {t.home.topRated}
-              </Text>
+              <View style={styles.topRatedRow}>
+                <Text style={styles.featuredTitle}>
+                  {t.home.topRated}
+                </Text>
+                <StarRating rating={topRatedProvider.rating || 5} />
+              </View>
 
               <Text style={styles.featuredName}>
-                {filteredProviders[0]?.name}
+                {topRatedProvider.name}
               </Text>
 
               <Text style={styles.featuredCategory}>
                 {translateDynamic(
                   selectedCategory,
-                  t.categories
+                  t.categories,
                 )}
               </Text>
             </View>
 
             <View style={styles.featuredAvatar}>
-              {filteredProviders[0]?.profileImage ? (
+              {topRatedProvider.profileImage ? (
                 <Image
                   source={{
                     uri:
                       ENV.IMAGE_BASE_URL +
                       'uploads/' +
-                      filteredProviders[0]
-                        .profileImage,
+                      topRatedProvider.profileImage,
                   }}
                   style={styles.featuredAvatar}
-                  resizeMode="cover"
                 />
               ) : (
                 <Icon
@@ -271,18 +337,25 @@ const HomeScreen = () => {
           onCall={handleCall}
           onMessage={handleWhatsApp}
           onViewProfile={handleViewProfile}
+          currentUserId={(user as any)?._id}
         />
 
-        {loading && (
+        {loading && providers.length === 0 && (
           <ActivityIndicator
             size="large"
             color={Colors.primary}
-            style={{ marginVertical: 20 }}
+            style={{ marginVertical: 30 }}
           />
+        )}
+
+        {loadingMore && (
+          <View style={{ paddingVertical: 30 }}>
+            <ActivityIndicator size="small" color={Colors.primary} />
+          </View>
         )}
       </ScrollView>
 
-      {/* Access Block Modal */}
+      {/* PROFILE / PAYMENT BLOCK */}
       <AccessBlockModal
         visible={showBlocked}
         title={t.profile.title}
@@ -303,6 +376,17 @@ const HomeScreen = () => {
             navigation.navigate(Routes.Payment);
           }
         }}
+      />
+
+      {/* SELF ACTION MODAL */}
+      <AccessBlockModal
+        visible={showSelfModal}
+        title={t.common.selfActionTitle}
+        subtitle={t.common.selfActionSubtitle}
+        laterText={t.common.cancel}
+        okText={t.settings.ok}
+        onClose={() => setShowSelfModal(false)}
+        onOk={() => setShowSelfModal(false)}
       />
     </View>
   );
@@ -394,5 +478,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primaryCard,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  topRatedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: moderateScale(6),
   },
 });

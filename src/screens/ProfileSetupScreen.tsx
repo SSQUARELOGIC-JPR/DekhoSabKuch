@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -18,6 +18,7 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import { Colors } from '../theme/colors';
 import FormField from '../components/FormField';
+import { categories } from '../utils/providersData';
 import { ImagePickerModal } from '../components/ImagePickerModal';
 import { requestCameraPermission } from '../utils/permissions';
 import { Routes } from '../constants/routes';
@@ -28,6 +29,7 @@ import { useTranslation } from '../localization/useTranslation';
 import { updateProfileApi } from '../services/api';
 import { apiHandler } from '../utils/apiHandler';
 import { ENV } from '../config/env';
+import SelectModal from '../components/SelectModal';
 
 type RoleType = 'customer' | 'provider' | 'both';
 type DocType = 'profile' | 'aadharFront' | 'aadharBack';
@@ -61,6 +63,19 @@ const ProfileScreen = ({ navigation }: any) => {
 
   const [isEdit, setIsEdit] = useState(!user?.profileDone);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  const categoryNames = categories.map(c => c.name);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+
+  const stateRef = useRef<any>(null);
+  const cityRef = useRef<any>(null);
+  const tehsilRef = useRef<any>(null);
+  const villageRef = useRef<any>(null);
+  const pincodeRef = useRef<any>(null);
+  const categoryRef = useRef<any>(null);
+  const experienceRef = useRef<any>(null);
+  const aboutRef = useRef<any>(null);
+
 
   const getImageUri = (img?: string | null) => {
     if (!img) return undefined;
@@ -118,7 +133,7 @@ const ProfileScreen = ({ navigation }: any) => {
         aadharBackImage &&
         category.trim().length > 0 &&
         experience.trim().length > 0 &&
-        about.trim().length > 0));
+        about.trim().length > 30));
 
   const handleSubmit = async () => {
     if (!isValid || loading) return;
@@ -235,21 +250,66 @@ const ProfileScreen = ({ navigation }: any) => {
         </TouchableOpacity>
       </View>
 
-      <KeyboardAvoidingView style={styles.body} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        style={styles.body}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: 120 }}
+        >
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>{t.profile.personalInfo}</Text>
 
-            <FormField icon="user" placeholder={t.profile.name} value={name} onChangeText={setName} editable={isEdit} />
+            <FormField icon="user" placeholder={t.profile.name} value={name} onChangeText={setName} editable={isEdit} returnKeyType="next"
+              onSubmitEditing={() => stateRef.current?.focus()} />
             <FormField icon="phone" placeholder="Mobile Number" value={user?.mobile || ''} editable={false} />
 
             <Text style={styles.sectionTitle}>{t.profile.addressDetails}</Text>
 
-            <FormField icon="flag" placeholder={t.profile.state} value={stateVal} onChangeText={setStateVal} editable={isEdit} />
-            <FormField icon="home" placeholder={t.profile.city} value={city} onChangeText={setCity} editable={isEdit} />
-            <FormField icon="map-pin" placeholder={t.profile.tehsil} value={tehsil} onChangeText={setTehsil} editable={isEdit} />
-            <FormField icon="map" placeholder={t.profile.village} value={village} onChangeText={setVillage} editable={isEdit} />
             <FormField
+              ref={stateRef}
+              icon="flag"
+              placeholder={t.profile.state}
+              value={stateVal}
+              onChangeText={setStateVal}
+              editable={isEdit}
+              returnKeyType="next"
+              onSubmitEditing={() => cityRef.current?.focus()}
+            />
+            <FormField
+              ref={cityRef}
+              icon="home"
+              placeholder={t.profile.city}
+              value={city}
+              onChangeText={setCity}
+              editable={isEdit}
+              returnKeyType="next"
+              onSubmitEditing={() => tehsilRef.current?.focus()}
+            />
+            <FormField
+              ref={tehsilRef}
+              icon="map-pin"
+              placeholder={t.profile.tehsil}
+              value={tehsil}
+              onChangeText={setTehsil}
+              editable={isEdit}
+              returnKeyType="next"
+              onSubmitEditing={() => villageRef.current?.focus()}
+            />
+            <FormField
+              ref={villageRef}
+              icon="map"
+              placeholder={t.profile.village}
+              value={village}
+              onChangeText={setVillage}
+              editable={isEdit}
+              returnKeyType="next"
+              onSubmitEditing={() => pincodeRef.current?.focus()}
+            />
+            <FormField
+              ref={pincodeRef}
               icon="hash"
               placeholder={t.profile.pincode}
               value={pincode}
@@ -257,34 +317,58 @@ const ProfileScreen = ({ navigation }: any) => {
               maxLength={6}
               onChangeText={(v) => setPincode(v.replace(/[^0-9]/g, ''))}
               editable={isEdit}
+              returnKeyType="next"
+              onSubmitEditing={() => categoryRef.current?.focus()}
             />
 
             {(role === 'provider' || role === 'both') && (
               <>
                 <Text style={styles.sectionTitle}>{t.profile.professionalDetails}</Text>
 
-                <FormField icon="tool" placeholder={t.profile.category} value={category} onChangeText={setCategory} editable={isEdit} />
+                <FormField
+                  ref={categoryRef}
+                  icon="tool"
+                  placeholder={t.profile.category}
+                  value={category}
+                  editable={false}
+                  isDropdown
+                  onPressDropdown={() => {
+                    if (!isEdit) return;
+                    setShowCategoryModal(true);
+                  }}
+                  onSubmitEditing={() => experienceRef.current?.focus()}
+                />
 
                 <FormField
+                  ref={experienceRef}
                   icon="award"
                   placeholder={t.profile.experience}
                   value={experience}
                   keyboardType="number-pad"
                   maxLength={2}
+                  returnKeyType="next"
+                  onSubmitEditing={() => aboutRef.current?.focus()}
                   onChangeText={(v) => {
                     const cleaned = v.replace(/[^0-9]/g, '');
                     if (cleaned.length <= 2) setExperience(cleaned);
                   }}
                   editable={isEdit}
                 />
-
+                <Text style={styles.charCount}>
+                  {about.length}/30
+                </Text>
                 <FormField
+                  ref={aboutRef}
                   icon="file-text"
                   placeholder={t.profile.aboutService}
                   value={about}
                   onChangeText={setAbout}
                   editable={isEdit}
                   multiline
+                  blurOnSubmit
+                  returnKeyType="done"
+                    wrapperStyle={{ marginTop: 0 }}
+
                 />
 
                 <Text style={styles.docTitle}>{t.profile.uploadId}</Text>
@@ -334,6 +418,15 @@ const ProfileScreen = ({ navigation }: any) => {
             index: 0,
             routes: [{ name: Routes.BottomTabs }],
           });
+        }}
+      />
+      <SelectModal
+        visible={showCategoryModal}
+        title={t.profile.category}
+        data={categoryNames}
+        onClose={() => setShowCategoryModal(false)}
+        onSelect={(val) => {
+          setCategory(val);
         }}
       />
     </View>
@@ -466,5 +559,12 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(15),
     fontWeight: '600',
     color: Colors.white,
+  },
+
+  charCount: {
+    textAlign: 'right',
+    fontSize: moderateScale(11),
+    color: Colors.textSecondary,
+    marginVertical: verticalScale(2),
   },
 });

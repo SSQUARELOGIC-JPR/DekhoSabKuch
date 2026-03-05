@@ -97,9 +97,10 @@ export interface Provider {
 
 export interface ProviderListProps {
   data: Provider[];
+  currentUserId?: string;
   onBlockedPress?: () => void;
-  onCall?: (phone: string) => void;
-  onMessage?: (phone: string) => void;
+  onCall?: (phone: string, providerId: string) => void;
+  onMessage?: (phone: string, providerId: string) => void;
   onViewProfile?: (provider: Provider) => void;
 }
 

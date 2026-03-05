@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import {
   View,
   TextInput,
@@ -15,107 +15,129 @@ interface FormFieldProps {
   placeholder?: string;
   value?: string;
   onChangeText?: (text: string) => void;
+
   editable?: boolean;
   keyboardType?: any;
   maxLength?: number;
   multiline?: boolean;
   numberOfLines?: number;
+
+  returnKeyType?: any;
+  onSubmitEditing?: () => void;
+  blurOnSubmit?: boolean;
+
   isDropdown?: boolean;
   onPressDropdown?: () => void;
+
   inputStyle?: any;
+  wrapperStyle?: any
 }
 
-const FormField: React.FC<FormFieldProps> = ({
-  icon,
-  placeholder,
-  value,
-  onChangeText,
-  editable = true,
-  keyboardType = 'default',
-  maxLength,
-  multiline = false,
-  numberOfLines = 1,
-  isDropdown = false,
-  onPressDropdown,
-  inputStyle,
-}) => {
-  const Container = isDropdown ? TouchableOpacity : View;
+const FormField = forwardRef<TextInput, FormFieldProps>(
+  (
+    {
+      icon,
+      placeholder,
+      value,
+      onChangeText,
+      editable = true,
+      keyboardType = 'default',
+      maxLength,
+      multiline = false,
+      numberOfLines = 1,
+      isDropdown = false,
+      onPressDropdown,
+      inputStyle,
+      wrapperStyle,
+      returnKeyType,
+      onSubmitEditing,
+      blurOnSubmit,
+    },
+    ref,
+  ) => {
+    const Container = isDropdown ? TouchableOpacity : View;
 
-  return (
-    <Container
-      activeOpacity={0.8}
-      onPress={isDropdown ? onPressDropdown : undefined}
-      style={[
-        styles.wrapper,
-        multiline && styles.multilineWrapper,
-        !editable && styles.disabled,
-      ]}
-    >
-      {icon && (
-        <Icon
-          name={icon}
-          size={moderateScale(18)}
-          color={Colors.primary}
-          style={[
-            styles.leftIcon,
-            multiline && styles.multilineIcon,
-          ]}
-        />
-      )}
+    return (
+      <Container
+        activeOpacity={0.8}
+        onPress={isDropdown ? onPressDropdown : undefined}
+        style={[
+          styles.wrapper,
+          multiline && styles.multilineWrapper,
+          !editable && styles.disabled,
+          wrapperStyle
+        ]}
+      >
+        {icon && (
+          <Icon
+            name={icon}
+            size={moderateScale(18)}
+            color={Colors.primary}
+            style={[
+              styles.leftIcon,
+              multiline && styles.multilineIcon,
+            ]}
+          />
+        )}
 
-      {isDropdown ? (
-        <Text
-          style={[
-            styles.dropdownText,
-            !value && styles.placeholderText,
-          ]}
-        >
-          {value || placeholder}
-        </Text>
-      ) : (
-        <TextInput
-          placeholder={placeholder}
-          placeholderTextColor={Colors.textSecondary}
-          value={value}
-          onChangeText={onChangeText}
-          editable={editable}
-          keyboardType={keyboardType}
-          maxLength={maxLength}
-          multiline={multiline}
-          numberOfLines={numberOfLines}
-          style={[
-            styles.input,
-            multiline && styles.textArea,
-            inputStyle,
-          ]}
-        />
-      )}
+        {isDropdown ? (
+          <Text
+            style={[
+              styles.dropdownText,
+              !value && styles.placeholderText,
+            ]}
+          >
+            {value || placeholder}
+          </Text>
+        ) : (
+          <TextInput
+            ref={ref}
+            placeholder={placeholder}
+            placeholderTextColor={Colors.textSecondary}
+            value={value}
+            onChangeText={onChangeText}
+            editable={editable}
+            keyboardType={keyboardType}
+            maxLength={maxLength}
+            multiline={multiline}
+            numberOfLines={numberOfLines}
+            returnKeyType={returnKeyType}
+            onSubmitEditing={onSubmitEditing}
+            blurOnSubmit={blurOnSubmit}
+            style={[
+              styles.input,
+              multiline && styles.textArea,
+              inputStyle,
+            ]}
+          />
+        )}
 
-      {isDropdown && (
-        <Icon
-          name="chevron-down"
-          size={moderateScale(18)}
-          color={Colors.textSecondary}
-        />
-      )}
-    </Container>
-  );
-};
+        {isDropdown && (
+          <Icon
+            name="chevron-down"
+            size={moderateScale(18)}
+            color={Colors.textSecondary}
+          />
+        )}
+      </Container>
+    );
+  },
+);
 
 export default FormField;
 
 const styles = StyleSheet.create({
   wrapper: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  borderWidth: 1,
-  borderColor: Colors.border,
-  borderRadius: moderateScale(10),
-  marginTop: moderateScale(14),
-  paddingHorizontal: moderateScale(12),
-  paddingVertical: verticalScale(10),
-  backgroundColor: Colors.white,
-},
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: moderateScale(10),
+    marginTop: moderateScale(14),
+    paddingHorizontal: moderateScale(12),
+    paddingVertical: verticalScale(10),
+    backgroundColor: Colors.white,
+  },
 
   multilineWrapper: {
     alignItems: 'flex-start',

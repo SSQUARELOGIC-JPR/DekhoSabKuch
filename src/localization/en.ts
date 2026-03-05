@@ -9,6 +9,9 @@ export default {
     front: 'Front',
     back: 'Back',
     notAvailable: 'Not available',
+    selfActionTitle: "It's You",
+    selfActionSubtitle:
+      "This is your own provider profile. You cannot call or message yourself.",
   },
 
   settings: {
@@ -82,11 +85,11 @@ export default {
     addressDetails: 'Address Details',
     professionalDetails: 'Professional Details',
     mobileNumber: 'Mobile Number',
-    village: 'Village',
-    tehsil: 'Tehsil',
+    village: 'Building / Locality / Village',
+    tehsil: 'Area / Tehsil',
     category: 'Service Category (e.g. Electrician)',
     experience: 'Experience (years)',
-    aboutService: 'About your service',
+    aboutService: 'About your service (min 30 characters)',
   },
   categories: {
     electrician: 'Electrician',

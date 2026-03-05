@@ -12,15 +12,18 @@ import {
 import Icon from 'react-native-vector-icons/Feather';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSelector } from 'react-redux';
 
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
 import { ScreenProps } from '../types/interfaces';
+import { RootState } from '../store';
 import { useTranslation } from '../localization/useTranslation';
 import { translateDynamic } from '../localization/translateDynamic';
 import { getProviderByIdApi } from '../services/api';
 import { apiHandler } from '../utils/apiHandler';
 import { ENV } from '../config/env';
+import AccessBlockModal from '../components/AccessBlockModal';
 
 const ProviderDetailsScreen: React.FC<ScreenProps> = ({
   navigation,
@@ -29,13 +32,18 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({
   const insets = useSafeAreaInsets();
   const t = useTranslation();
 
+  const user = useSelector((state: RootState) => state.auth.user);
+
   const initialProvider = route?.params?.provider;
   const providerId = route?.params?.providerId || initialProvider?._id;
 
   const [provider, setProvider] = useState<any>(
     initialProvider || null
   );
+
   const [loading, setLoading] = useState(!initialProvider);
+
+  const [showSelfModal, setShowSelfModal] = useState(false);
 
   const getImageUri = (img?: string) => {
     if (!img) return undefined;
@@ -65,13 +73,28 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({
     }
   }, [fetchProvider]);
 
+  const isSelfProvider = () => {
+    return (user as any)?._id === provider?._id;
+  };
+
   const handleCall = () => {
     if (!provider?.mobile) return;
+
+    if (isSelfProvider()) {
+      setShowSelfModal(true);
+      return;
+    }
+
     Linking.openURL(`tel:${provider.mobile}`);
   };
 
   const handleWhatsApp = () => {
     if (!provider?.mobile) return;
+
+    if (isSelfProvider()) {
+      setShowSelfModal(true);
+      return;
+    }
 
     const url = `whatsapp://send?phone=91${provider.mobile}`;
 
@@ -95,7 +118,7 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({
     return (
       <View style={styles.loader}>
         <Text style={{ color: Colors.textPrimary }}>
-          {t.common.notAvailable || 'Not available'}
+          {t.common.notAvailable}
         </Text>
       </View>
     );
@@ -218,6 +241,7 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({
             <Text style={styles.statNumber}>
               {provider.experience || 0}+
             </Text>
+
             <Text style={styles.statLabel}>
               {t.providerDetails.experience}
             </Text>
@@ -227,6 +251,7 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({
             <Text style={styles.statNumber}>
               {provider.servicesDone || 0}+
             </Text>
+
             <Text style={styles.statLabel}>
               {t.providerDetails.servicesDone}
             </Text>
@@ -236,6 +261,7 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({
             <Text style={styles.statNumber}>
               {provider.rating || 0}
             </Text>
+
             <Text style={styles.statLabel}>
               {t.providerDetails.rating}
             </Text>
@@ -247,6 +273,7 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({
           <Text style={styles.cardTitle}>
             {t.providerDetails.about}
           </Text>
+
           <Text style={styles.cardDesc}>
             {provider.about || '-'}
           </Text>
@@ -263,6 +290,7 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({
               size={18}
               color={Colors.white}
             />
+
             <Text style={styles.btnText}>
               {t.providerDetails.call}
             </Text>
@@ -277,12 +305,24 @@ const ProviderDetailsScreen: React.FC<ScreenProps> = ({
               size={18}
               color={Colors.white}
             />
+
             <Text style={styles.btnText}>
               {t.providerDetails.whatsapp}
             </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* SELF ACTION MODAL */}
+      <AccessBlockModal
+        visible={showSelfModal}
+        title={t.common.selfActionTitle}
+        subtitle={t.common.selfActionSubtitle}
+        laterText={t.common.cancel}
+        okText={t.settings.ok}
+        onClose={() => setShowSelfModal(false)}
+        onOk={() => setShowSelfModal(false)}
+      />
     </View>
   );
 };

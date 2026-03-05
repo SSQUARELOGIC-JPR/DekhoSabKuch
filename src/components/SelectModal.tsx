@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -32,11 +32,18 @@ const SelectModal: React.FC<SelectModalProps> = ({
 }) => {
   const [search, setSearch] = useState('');
 
+  useEffect(() => {
+    if (visible) {
+      setSearch('');
+    }
+  }, [visible]);
+
   const filteredData = useMemo(() => {
     return data.filter(item =>
       item.toLowerCase().includes(search.toLowerCase())
     );
   }, [search, data]);
+
 
   return (
     <Modal visible={visible} animationType="fade" transparent>
